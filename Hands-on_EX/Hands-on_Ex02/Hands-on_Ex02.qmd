@@ -110,6 +110,21 @@ tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 5, style = "fisher") + tm_bor
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 2, style = "jenks") + tm_borders(alpha = 0.5)
 
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 6, style = "jenks") + tm_borders(alpha = 0.5)
+
+tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 10, style = "jenks") + tm_borders(alpha = 0.5)
+
+tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 20, style = "jenks") + tm_borders(alpha = 0.5)
+```
+
+# using equal with different number of classes
+```{r}
+tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 2, style = "equal") + tm_borders(alpha = 0.5)
+
+tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 6, style = "equal") + tm_borders(alpha = 0.5)
+
+tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 10, style = "equal") + tm_borders(alpha = 0.5)
+
+tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 20, style = "equal") + tm_borders(alpha = 0.5)
 ```
 
 # Plotting choropleth map with custome break
