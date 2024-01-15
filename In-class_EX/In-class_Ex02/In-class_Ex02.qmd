@@ -1,3 +1,68 @@
 ---
-title: "In-class_Ex02"
+title: "In-class Exercise 2"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+
+execute: 
+  eval: true
+  echo: true
+  warning: false
+date: "`r Sys.Date()`"
 ---
+
+## Get Started
+# Installing and loaing R packages
+```{r}
+pacman::p_load(sf, tmap, tidyverse, arrow, lubridate)
+```
+### Importing Grab-Posisi Dataset
+```{r}
+#| eval: false
+df <- read_parquet("data/GrabPosisi/part-00000-8bbff892-97d2-4011-9961-703e38972569.c000.snappy.parquet")
+```
+
+# convert data type of pingtimestamp from character to date-time
+```{r}
+#| eval: false
+df$pingtimestamp <- as_datetime(df$pingtimestamp)
+```
+
+# DIY 1. Extract trips' origin locations. 2. derive three new columns.(Weekday, starting hour and day of the month). 3. name the output tibble data.frame.origin_df.
+```{r}
+#| eval: false
+origin_df <- df %>%
+  group_by(trj_id) %>%
+  arrange(desc(pingtimestamp)) %>%
+  filter(row_number()==1) %>%
+  mutate(weekday = wday(pingtimestamp, label=TRUE, abbr=TRUE), 
+         start_hr = factor(hour(pingtimestamp)), 
+         day = factor(mday(pingtimestamp)))
+```
+
+# DIY 1. Extract trip's destination locations, 2. derive the Weekday, ending hour and day of the month columns.
+```{r}
+#| eval: false
+destination_df <- df %>%
+  group_by(trj_id) %>%
+  arrange(pingtimestamp) %>%
+  filter(row_number()==1) %>%
+  mutate(weekday = wday(pingtimestamp, label=TRUE, abbr=TRUE), 
+         end_hr = factor(hour(pingtimestamp)), 
+         day = factor(mday(pingtimestamp)))
+```
+
+```{r}
+#| echo: false
+#| eval: false
+write_rds(origin_df, "data/rds/origin_df.rds")
+write_rds(destination_df, "data/rds/destination_df.rds")
+```
+
+## Import Data
+```{r}
+origin_df <- read_rds("data/rds/origin_df.rds")
+destination_df <- read_rds("data/rds/destination_df.rds")
+```
+

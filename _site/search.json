@@ -110,5 +110,12 @@
     "title": "Hands-on Exercise 1: Geospatial Data Wrangling with R",
     "section": "Exploratory Data Analysis (EDA)",
     "text": "Exploratory Data Analysis (EDA)\nHistogram to reveal the distribution of PreSch Density\n\nhist(mpsz3414$`PreSch Density`)\n\n\n\n\nggplost 2 function is used\n\nggplot(data=mpsz3414, aes(x= as.numeric(`PreSch Density`)))+ geom_histogram(bins=20, color=\"black\", fill=\"light blue\") + labs(title = \"Are pre-school even distributed in Singapore?\", subtitle= \"There are many planning sub-zones with a single pre-school, on the other hand, \\nthere are two planning sub-zones with at least 20 pre-schools\", x = \"Pre-school density (per km sq)\", y = \"Frequency\")\n\n\n\n\nusing ggplot 2 method, plot a scatterplot\n\nggplot(data=mpsz3414, aes(y = `PreSch Count`, x= as.numeric(`PreSch Density`)))+ geom_point(color=\"black\", fill=\"light blue\") + xlim(0, 40) + ylim(0, 40) + labs(title = \"\", x = \"Pre-school density (per km sq)\", y = \"Pre-school count\")"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex02/In-class_Ex02.html#import-data",
+    "href": "In-class_EX/In-class_Ex02/In-class_Ex02.html#import-data",
+    "title": "In-class Exercise 2",
+    "section": "Import Data",
+    "text": "Import Data\n\n\nCode\norigin_df &lt;- read_rds(\"data/rds/origin_df.rds\")\ndestination_df &lt;- read_rds(\"data/rds/destination_df.rds\")"
   }
 ]
