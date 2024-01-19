@@ -5,13 +5,14 @@ execute:
 date: "`r Sys.Date()`"
 ---
 
-##Getting Started
-#Installing and loading R packages
+## Getting Started #Installing and loading R packages
+
 ```{r}
 pacman::p_load(sf, tmap, tidyverse)
 ```
 
 ## Importing Geospatial Data into R
+
 ```{r}
 mpsz <- st_read(dsn = "data/geospatial", layer = "MP14_SUBZONE_WEB_PL")
 
@@ -19,93 +20,120 @@ mpsz
 ```
 
 # Importing Attribute Data into R
+
 ```{r}
 popdata <- read_csv("data/aspatial/respopagesextod2011to2020.csv")
 ```
 
 # Data Preparation
+
 data wrangling and transformation function will be used
+
 ```{r}
 popdata2020 <- popdata %>% filter(Time == 2020) %>% group_by(PA, SZ, AG) %>% summarise(`POP` = sum(`Pop`)) %>% ungroup()%>% pivot_wider(names_from=AG, values_from=POP) %>% mutate(YOUNG = rowSums(.[3:6])+rowSums(.[12])) %>% mutate(`ECONOMY ACTIVE` = rowSums(.[7:11])+ rowSums(.[13:15]))%>% mutate(`AGED`=rowSums(.[16:21])) %>%
 mutate(`TOTAL`=rowSums(.[3:21])) %>% mutate(`DEPENDENCY` = (`YOUNG` + `AGED`)/`ECONOMY ACTIVE`) %>% select(`PA`, `SZ`, `YOUNG`, `ECONOMY ACTIVE`, `AGED`, `TOTAL`, `DEPENDENCY`)
 ```
 
-Joining the attribute data and geospatial data
-need to convert the values in PA and SZ to uppercase
+Joining the attribute data and geospatial data need to convert the values in PA and SZ to uppercase
+
 ```{r}
 popdata2020 <- popdata2020 %>% mutate_at(.vars = vars(PA, SZ), .funs = list(toupper)) %>% filter(`ECONOMY ACTIVE` > 0)
 ```
+
 left_join() of dplyr us used to join the geographical data and attribute table
+
 ```{r}
 mpsz_pop2020 <- left_join(mpsz, popdata2020, by = c("SUBZONE_N" = "SZ"))
 
 ```
 
 ## Choropleth Mapping Geospatial Data Using tmap
+
 # Plotting a choropleth map quickly using qtm()
+
 ```{r}
 tmap_mode("plot")
 qtm(mpsz_pop2020, fill = "DEPENDENCY")
 ```
 
 # Creating a choropleth map by using tmap's elements
+
 ```{r}
 tm_shape(mpsz_pop2020)+tm_fill("DEPENDENCY", style = "quantile", palette = "Blues",title = "Dependency ratio") + tm_layout(main.title = "Distribution of Dependency Ratio by planning subzone", main.title.position = "center", main.title.size = 1.2, legend.height = 0.45, legend.width = 0.35,frame = TRUE) + tm_borders(alpha = 0.5) + tm_compass(type="8star", size = 2) + tm_scale_bar() + tm_grid(alpha =0.2) + tm_credits("Source: Planning Sub-zone boundary from Urban Redevelopment Authorithy (URA)\n and Population data from Department of Statistics DOS", position = c("left", "bottom"))
 ```
 
 # Drawing a base map
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_polygons()
 ```
 
 # Drawing a choropleth map using tm_polygons()
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_polygons("DEPENDENCY")
 ```
 
-# Drawiing a choropleth map using tm_fill() and *tm_border()**
+# Drawiing a choropleth map using tm_fill() and \*tm_border()\*\*
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY")
 ```
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY") + tm_borders(lwd = 0.1, alpha = 1)
 ```
 
 # Plotting choropleth maps with built-in classification methods
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 5, style = "jenks") + tm_borders(alpha = 0.5)
 ```
+
 equal data classification method is used
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 5, style = "equal") + tm_borders(alpha = 0.5)
 ```
+
 quantile data classification method is used
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 5, style = "quantile") + tm_borders(alpha = 0.5)
 ```
+
 sd data classification method is used
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 5, style = "sd") + tm_borders(alpha = 0.5)
 ```
+
 kmeans data classification method is used
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 5, style = "kmeans") + tm_borders(alpha = 0.5)
 ```
 
 hclust data classification method is used
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 5, style = "hclust") + tm_borders(alpha = 0.5)
 ```
+
 bclust data classification method is used
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 5, style = "bclust") + tm_borders(alpha = 0.5)
 ```
+
 fisher data classification method is used
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 5, style = "fisher") + tm_borders(alpha = 0.5)
 ```
 
 # using junks with different number of classes
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 2, style = "jenks") + tm_borders(alpha = 0.5)
 
@@ -117,6 +145,7 @@ tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 20, style = "jenks") + tm_bor
 ```
 
 # using equal with different number of classes
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 2, style = "equal") + tm_borders(alpha = 0.5)
 
@@ -128,27 +157,35 @@ tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", n = 20, style = "equal") + tm_bor
 ```
 
 # Plotting choropleth map with custome break
+
 ```{r}
 summary(mpsz_pop2020$DEPENDENCY)
 ```
 
-Plot the choropleth map 
+Plot the choropleth map
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", breaks = c(0, 0.60, 0.70, 0.80, 0.90, 1.00)) + tm_borders(alpha = 0.5)
 ```
+
 ## Colour Scheme
+
 # Using ColorBrewer palette
+
 ```{r}
 tm_shape(mpsz_pop2020)+tm_fill("DEPENDENCY", n = 6, style = "quantile", palette = "Blues") + tm_borders(alpha = 0.5)
 ```
 
 reverse the color shading, add a '-' prefix
+
 ```{r}
 tm_shape(mpsz_pop2020) + tm_fill("DEPENDENCY", style = "quantile", palette= "-Greens") + tm_borders(alpha = 0.5)
 ```
 
 ## Map Layouts
+
 # Map Legend
+
 ```{r}
 tm_shape(mpsz_pop2020)+
   tm_fill("DEPENDENCY", 
@@ -169,6 +206,7 @@ tm_shape(mpsz_pop2020)+
 ```
 
 # Map style
+
 ```{r}
 tm_shape(mpsz_pop2020)+
   tm_fill("DEPENDENCY", 
@@ -179,6 +217,7 @@ tm_shape(mpsz_pop2020)+
 ```
 
 # Cartograhpic Furniture
+
 ```{r}
 tm_shape(mpsz_pop2020)+
   tm_fill("DEPENDENCY", 
@@ -198,12 +237,15 @@ tm_shape(mpsz_pop2020)+
   tm_credits("Source: Planning Sub-zone boundary from Urban Redevelopment Authorithy (URA)\n and Population data from Department of Statistics DOS", 
              position = c("left", "bottom"))
 ```
+
 reset default
+
 ```{r}
 tmap_style("white")
 ```
 
 ## Drawing Small Multiple Choropleth Maps
+
 # Assigning multiple values to at least one of the aesthetic arguments
 
 ```{r}
@@ -216,7 +258,8 @@ tm_shape(mpsz_pop2020)+
   tmap_style("white")
 ```
 
-small multiple choropleth maps are created by assigning multiple values to at least one of the aesthetic argument 
+small multiple choropleth maps are created by assigning multiple values to at least one of the aesthetic argument
+
 ```{r}
 tm_shape(mpsz_pop2020)+ 
   tm_polygons(c("DEPENDENCY","AGED"),
@@ -227,6 +270,7 @@ tm_shape(mpsz_pop2020)+
 ```
 
 # Defining a group-by variable in tm_facets()
+
 ```{r}
 tm_shape(mpsz_pop2020) +
   tm_fill("DEPENDENCY",
@@ -243,6 +287,7 @@ tm_shape(mpsz_pop2020) +
 ```
 
 # Creating multiple stand-alone maps with tmap_arrange()
+
 ```{r}
 youngmap <- tm_shape(mpsz_pop2020)+ 
   tm_polygons("YOUNG", 
@@ -258,6 +303,7 @@ tmap_arrange(youngmap, agedmap, asp=1, ncol=2)
 ```
 
 # Mapping Spatial Object Meeting a Selection Criterion
+
 ```{r}
 tm_shape(mpsz_pop2020[mpsz_pop2020$REGION_N=="CENTRAL REGION", ])+
   tm_fill("DEPENDENCY", 

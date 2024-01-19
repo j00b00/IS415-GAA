@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="dcterms.date" content="2024-01-16">
+<meta name="dcterms.date" content="2024-01-20">
 
 <title>IS415-GAA - Hands-on Exercise 2: Thematic Mapping and GeoVisualisation with R</title>
 <style>
@@ -130,7 +130,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="dropdown-text">Hand-on Exercise 2</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex03.html" rel="" target="">
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html" rel="" target="">
  <span class="dropdown-text">Hand-on Exercise 3</span></a>
   </li>  
     </ul>
@@ -172,7 +172,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#importing-geospatial-data-into-r" id="toc-importing-geospatial-data-into-r" class="nav-link active" data-scroll-target="#importing-geospatial-data-into-r">Importing Geospatial Data into R</a></li>
+  <li><a href="#getting-started-installing-and-loading-r-packages" id="toc-getting-started-installing-and-loading-r-packages" class="nav-link active" data-scroll-target="#getting-started-installing-and-loading-r-packages">Getting Started #Installing and loading R packages</a></li>
+  <li><a href="#importing-geospatial-data-into-r" id="toc-importing-geospatial-data-into-r" class="nav-link" data-scroll-target="#importing-geospatial-data-into-r">Importing Geospatial Data into R</a></li>
   <li><a href="#importing-attribute-data-into-r" id="toc-importing-attribute-data-into-r" class="nav-link" data-scroll-target="#importing-attribute-data-into-r">Importing Attribute Data into R</a></li>
   <li><a href="#data-preparation" id="toc-data-preparation" class="nav-link" data-scroll-target="#data-preparation">Data Preparation</a>
   <ul class="collapse">
@@ -223,7 +224,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">January 16, 2024</p>
+      <p class="date">January 20, 2024</p>
     </div>
   </div>
   
@@ -233,10 +234,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<p>##Getting Started #Installing and loading R packages</p>
+<section id="getting-started-installing-and-loading-r-packages" class="level2">
+<h2 class="anchored" data-anchor-id="getting-started-installing-and-loading-r-packages">Getting Started #Installing and loading R packages</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(sf, tmap, tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+</section>
 <section id="importing-geospatial-data-into-r" class="level2">
 <h2 class="anchored" data-anchor-id="importing-geospatial-data-into-r">Importing Geospatial Data into R</h2>
 <div class="cell">

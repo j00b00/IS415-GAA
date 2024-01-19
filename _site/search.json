@@ -7,6 +7,41 @@
     "text": "Welcome to IS415 Geospatial Analytics and Applications\nThis is the course website of IS415 I study this term. You will find my course work on this website."
   },
   {
+    "objectID": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html",
+    "href": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html",
+    "title": "Hands-on_Ex03 1st Order Spatial Point Patterns Analysis Method",
+    "section": "",
+    "text": "Code\npacman::p_load(maptools, sf, raster, spatstat, tmap)"
+  },
+  {
+    "objectID": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html#installing-and-loading-the-r-packages",
+    "href": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html#installing-and-loading-the-r-packages",
+    "title": "Hands-on_Ex03 1st Order Spatial Point Patterns Analysis Method",
+    "section": "",
+    "text": "Code\npacman::p_load(maptools, sf, raster, spatstat, tmap)"
+  },
+  {
+    "objectID": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html#sptial-data-wrangling",
+    "href": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html#sptial-data-wrangling",
+    "title": "Hands-on_Ex03 1st Order Spatial Point Patterns Analysis Method",
+    "section": "Sptial Data Wrangling",
+    "text": "Sptial Data Wrangling"
+  },
+  {
+    "objectID": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html#geospatial-data-warangling",
+    "href": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html#geospatial-data-warangling",
+    "title": "Hands-on_Ex03 1st Order Spatial Point Patterns Analysis Method",
+    "section": "Geospatial Data Warangling",
+    "text": "Geospatial Data Warangling\n\n\nCode\nchildcare &lt;- as_Spatial(childcare_sf)\nmpsz &lt;- as_Spatial(mpsz_sf)\nsg &lt;- as_Spatial(sg_sf)"
+  },
+  {
+    "objectID": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html#first-order-spatial-poiny-patterns-analysis",
+    "href": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html#first-order-spatial-poiny-patterns-analysis",
+    "title": "Hands-on_Ex03 1st Order Spatial Point Patterns Analysis Method",
+    "section": "First-order Spatial Poiny Patterns Analysis",
+    "text": "First-order Spatial Poiny Patterns Analysis"
+  },
+  {
     "objectID": "Hands-on_EX/Hands-on_Ex01/Hands-on_Ex01.html",
     "href": "Hands-on_EX/Hands-on_Ex01/Hands-on_Ex01.html",
     "title": "Hands-on Exercise 1: Geospatial Data Wrangling with R",
@@ -74,7 +109,14 @@
     "href": "Hands-on_EX/Hands-on_Ex02/Hands-on_Ex02.html",
     "title": "Hands-on Exercise 2: Thematic Mapping and GeoVisualisation with R",
     "section": "",
-    "text": "##Getting Started #Installing and loading R packages\npacman::p_load(sf, tmap, tidyverse)"
+    "text": "pacman::p_load(sf, tmap, tidyverse)"
+  },
+  {
+    "objectID": "Hands-on_EX/Hands-on_Ex02/Hands-on_Ex02.html#getting-started-installing-and-loading-r-packages",
+    "href": "Hands-on_EX/Hands-on_Ex02/Hands-on_Ex02.html#getting-started-installing-and-loading-r-packages",
+    "title": "Hands-on Exercise 2: Thematic Mapping and GeoVisualisation with R",
+    "section": "",
+    "text": "pacman::p_load(sf, tmap, tidyverse)"
   },
   {
     "objectID": "Hands-on_EX/Hands-on_Ex02/Hands-on_Ex02.html#importing-geospatial-data-into-r",
@@ -117,5 +159,26 @@
     "title": "In-class Exercise 2",
     "section": "Import Data",
     "text": "Import Data\n\n\nCode\norigin_df &lt;- read_rds(\"data/rds/origin_df.rds\")\ndestination_df &lt;- read_rds(\"data/rds/destination_df.rds\")"
+  },
+  {
+    "objectID": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html#first-order-spatial-point-patterns-analysis",
+    "href": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html#first-order-spatial-point-patterns-analysis",
+    "title": "Hands-on_Ex03 1st Order Spatial Point Patterns Analysis Method",
+    "section": "First-order Spatial Point Patterns Analysis",
+    "text": "First-order Spatial Point Patterns Analysis"
+  },
+  {
+    "objectID": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html#fixed-and-adaptive-kde",
+    "href": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html#fixed-and-adaptive-kde",
+    "title": "Hands-on_Ex03 1st Order Spatial Point Patterns Analysis Method",
+    "section": "Fixed and Adaptive KDE",
+    "text": "Fixed and Adaptive KDE"
+  },
+  {
+    "objectID": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html#nearest-neighbour-analysis",
+    "href": "Hands-on_EX/Hands-on_Ex03/Hands-on_Ex03.html#nearest-neighbour-analysis",
+    "title": "Hands-on_Ex03 1st Order Spatial Point Patterns Analysis Method",
+    "section": "Nearest Neighbour Analysis",
+    "text": "Nearest Neighbour Analysis"
   }
 ]

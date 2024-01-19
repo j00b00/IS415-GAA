@@ -1,3 +1,380 @@
 ---
 title: "Hands-on_Ex03 1st Order Spatial Point Patterns Analysis Method"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+
+execute: 
+  eval: true
+  echo: true
+  warning: false
+date: "`r Sys.Date()`"
 ---
+## Installing and loading the R packages
+```{r}
+pacman::p_load(maptools, sf, raster, spatstat, tmap)
+```
+
+## Sptial Data Wrangling
+# Importing the spatial data
+```{r}
+childcare_sf <- st_read("data/childCareServices.geojson") %>%
+  st_transform(crs = 3414)
+
+sg_sf <- st_read(dsn = "data", layer="CostalOutline")
+
+mpsz_sf <- st_read(dsn = "data", 
+                layer = "MP14_SUBZONE_WEB_PL")
+```
+
+# DIY retrieve the referencing system information
+```{r}
+st_crs(childcare_sf)
+st_crs(sg_sf)
+st_crs(mpsz_sf)
+```
+# DIY assign correct crs to mpsz_sf and sg_sf 
+```{r}
+sg_sf <- st_set_crs(sg_sf, 3414)
+mpsz_sf <- st_set_crs(mpsz_sf, 3414)
+
+st_crs(childcare_sf)
+st_crs(sg_sf)
+st_crs(mpsz_sf)
+```
+# Mapping geospatial data sets
+#DIY
+```{r}
+tmap_mode("plot")
+tm_shape(mpsz_sf)+tm_polygons()+tm_shape(childcare_sf)+tm_dots()
+
+```
+# Alternative
+```{r}
+tmap_mode('view')
+tm_shape(childcare_sf)+
+  tm_dots()
+tmap_mode("plot")
+```
+
+## Geospatial Data Warangling
+```{r}
+childcare <- as_Spatial(childcare_sf)
+mpsz <- as_Spatial(mpsz_sf)
+sg <- as_Spatial(sg_sf)
+```
+
+# DIY display the information of spatial classes
+```{r}
+subset(childcare)
+subset(mpsz)
+subset(sg)
+```
+
+# Converting Spatial* class into generic sp format
+```{r}
+childcare_sp <- as(childcare, "SpatialPoints")
+sg_sp <- as(sg, "SpatialPolygons")
+
+childcare_sp
+sg_sp
+```
+
+#Converting generic sp format into spatstat's ppp format
+```{r}
+childcare_ppp <- as(childcare_sp, "ppp")
+childcare_ppp
+
+plot(childcare_ppp)
+```
+
+# Handling duplicate points
+```{r}
+any(duplicated(childcare_ppp))
+
+multiplicity(childcare_ppp)
+
+sum(multiplicity(childcare_ppp) > 1)
+
+tmap_mode('view')
+tm_shape(childcare) +
+  tm_dots(alpha=0.4, 
+          size=0.05)
+
+tmap_mode('plot')
+```
+
+# Overcome Challenge (How to spot the duplicate point form the map above)
+```{r}
+childcare_ppp_jit <- rjitter(childcare_ppp, 
+                             retry=TRUE, 
+                             nsim=1, 
+                             drop=TRUE)
+
+any(duplicated(childcare_ppp_jit))
+```
+
+# Creating owin object
+```{r}
+sg_owin <- as(sg_sp, "owin")
+
+plot(sg_owin)
+
+summary(sg_owin)
+```
+
+# Combining point events objects and owin object
+```{r}
+childcareSG_ppp = childcare_ppp[sg_owin]
+
+summary(childcareSG_ppp)
+```
+# DIY plot childcareSG_ppp 
+```{r}
+plot(childcareSG_ppp)
+```
+
+## First-order Spatial Point Patterns Analysis
+# Kernel Density Estimation
+```{r}
+kde_childcareSG_bw <- density(childcareSG_ppp,
+                              sigma=bw.diggle,
+                              edge=TRUE,
+                            kernel="gaussian") 
+
+plot(kde_childcareSG_bw)
+```
+# retrieve badwidth 
+```{r}
+bw <- bw.diggle(childcareSG_ppp)
+bw
+```
+
+# Rescalling KDE values
+```{r}
+childcareSG_ppp.km <- rescale(childcareSG_ppp, 1000, "km")
+
+kde_childcareSG.bw <- density(childcareSG_ppp.km, sigma=bw.diggle, edge=TRUE, kernel="gaussian")
+plot(kde_childcareSG.bw)
+```
+
+# Working with different automatic badwidth methods
+```{r}
+ bw.CvL(childcareSG_ppp.km)
+
+bw.scott(childcareSG_ppp.km)
+
+bw.ppl(childcareSG_ppp.km)
+
+bw.diggle(childcareSG_ppp.km)
+```
+
+# Compare the output of using bw.diggel and bw.ppl methods
+```{r}
+kde_childcareSG.ppl <- density(childcareSG_ppp.km, 
+                               sigma=bw.ppl, 
+                               edge=TRUE,
+                               kernel="gaussian")
+par(mfrow=c(1,2))
+plot(kde_childcareSG.bw, main = "bw.diggle")
+plot(kde_childcareSG.ppl, main = "bw.ppl")
+```
+
+# Working with different kernel methods
+```{r}
+par(mfrow=c(2,2))
+plot(density(childcareSG_ppp.km, 
+             sigma=bw.ppl, 
+             edge=TRUE, 
+             kernel="gaussian"), 
+     main="Gaussian")
+plot(density(childcareSG_ppp.km, 
+             sigma=bw.ppl, 
+             edge=TRUE, 
+             kernel="epanechnikov"), 
+     main="Epanechnikov")
+plot(density(childcareSG_ppp.km, 
+             sigma=bw.ppl, 
+             edge=TRUE, 
+             kernel="quartic"), 
+     main="Quartic")
+plot(density(childcareSG_ppp.km, 
+             sigma=bw.ppl, 
+             edge=TRUE, 
+             kernel="disc"), 
+     main="Disc")
+```
+
+## Fixed and Adaptive KDE
+# Computing KDE by using fixed bandwidth (bandwidth = 600m), (sigma = 0.6 as measurement of childcareSG_app.km is in kilometer)
+```{r}
+kde_childcareSG_600 <- density(childcareSG_ppp.km, sigma=0.6, edge=TRUE, kernel="gaussian")
+plot(kde_childcareSG_600)
+```
+
+# Computing KDE by using adaptive bandwidth
+```{r}
+kde_childcareSG_adaptive <- adaptive.density(childcareSG_ppp.km, method="kernel")
+plot(kde_childcareSG_adaptive)
+```
+
+# Compare the fixed and adaptive KDE outputs
+```{r}
+par(mfrow=c(1,2))
+plot(kde_childcareSG.bw, main = "Fixed bandwidth")
+plot(kde_childcareSG_adaptive, main = "Adaptive bandwidth")
+```
+
+# Converting KDE output into grid objects
+```{r}
+gridded_kde_childcareSG_bw <- as.SpatialGridDataFrame.im(kde_childcareSG.bw)
+spplot(gridded_kde_childcareSG_bw)
+```
+
+# Converting gridded output into raster
+```{r}
+kde_childcareSG_bw_raster <- raster(gridded_kde_childcareSG_bw)
+
+kde_childcareSG_bw_raster
+```
+
+# Assigning projection systems
+```{r}
+projection(kde_childcareSG_bw_raster) <- CRS("+init=EPSG:3414")
+kde_childcareSG_bw_raster
+```
+
+# Visualising the output in tmap
+```{r}
+tm_shape(kde_childcareSG_bw_raster) + 
+  tm_raster("v") +
+  tm_layout(legend.position = c("right", "bottom"), frame = FALSE)
+```
+
+# Comparing Spatial Point Patterns using KDE
+# Extracting study area
+```{r}
+pg = mpsz[mpsz@data$PLN_AREA_N == "PUNGGOL",]
+tm = mpsz[mpsz@data$PLN_AREA_N == "TAMPINES",]
+ck = mpsz[mpsz@data$PLN_AREA_N == "CHOA CHU KANG",]
+jw = mpsz[mpsz@data$PLN_AREA_N == "JURONG WEST",]
+```
+# Plotting target planning areas
+```{r}
+par(mfrow=c(2,2))
+plot(pg, main = "Ponggol")
+plot(tm, main = "Tampines")
+plot(ck, main = "Choa Chu Kang")
+plot(jw, main = "Jurong West")
+```
+# Convering the spatial point data frame into generic sp format
+```{r}
+pg_sp = as(pg, "SpatialPolygons")
+tm_sp = as(tm, "SpatialPolygons")
+ck_sp = as(ck, "SpatialPolygons")
+jw_sp = as(jw, "SpatialPolygons")
+```
+# Create owin objects
+```{r}
+pg_owin = as(pg_sp, "owin")
+tm_owin = as(tm_sp, "owin")
+ck_owin = as(ck_sp, "owin")
+jw_owin = as(jw_sp, "owin")
+```
+# Combining childcare points and the study area
+````{r}
+childcare_pg_ppp = childcare_ppp_jit[pg_owin]
+childcare_tm_ppp = childcare_ppp_jit[tm_owin]
+childcare_ck_ppp = childcare_ppp_jit[ck_owin]
+childcare_jw_ppp = childcare_ppp_jit[jw_owin]
+```
+# rescale function -> transform the unit of measurement from metre to kilometre.
+```{r}
+childcare_pg_ppp.km = rescale(childcare_pg_ppp, 1000, "km")
+childcare_tm_ppp.km = rescale(childcare_tm_ppp, 1000, "km")
+childcare_ck_ppp.km = rescale(childcare_ck_ppp, 1000, "km")
+childcare_jw_ppp.km = rescale(childcare_jw_ppp, 1000, "km")
+```
+# Plot these 4 study areas and the locations of the childcare centres
+```{r}
+par(mfrow=c(2,2))
+plot(childcare_pg_ppp.km, main="Punggol")
+plot(childcare_tm_ppp.km, main="Tampines")
+plot(childcare_ck_ppp.km, main="Choa Chu Kang")
+plot(childcare_jw_ppp.km, main="Jurong West")
+```
+# Computing KDE (bw.diggle method is used to derive the bandwidth of each)
+```{r}
+par(mfrow=c(2,2))
+plot(density(childcare_pg_ppp.km, 
+             sigma=bw.diggle, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="Punggol")
+plot(density(childcare_tm_ppp.km, 
+             sigma=bw.diggle, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="Tempines")
+plot(density(childcare_ck_ppp.km, 
+             sigma=bw.diggle, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="Choa Chu Kang")
+plot(density(childcare_jw_ppp.km, 
+             sigma=bw.diggle, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="JUrong West")
+```
+# Computing fixed bandwidth KDE
+```{r}
+par(mfrow=c(2,2))
+plot(density(childcare_ck_ppp.km, 
+             sigma=0.25, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="Chou Chu Kang")
+plot(density(childcare_jw_ppp.km, 
+             sigma=0.25, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="JUrong West")
+plot(density(childcare_pg_ppp.km, 
+             sigma=0.25, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="Punggol")
+plot(density(childcare_tm_ppp.km, 
+             sigma=0.25, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="Tampines")
+```
+
+## Nearest Neighbour Analysis
+# Testing spatial point patterns using Clark and EVans test
+```{r}
+clarkevans.test(childcareSG_ppp,
+                correction="none",
+                clipregion="sg_owin",
+                alternative=c("clustered"),
+                nsim=99)
+```
+# Clark and Evans Test: Chao Chu Kang planning area
+```{r}
+clarkevans.test(childcare_ck_ppp,
+                correction="none",
+                clipregion=NULL,
+                alternative=c("two.sided"),
+                nsim=999)
+```
+# Clark and Evans Test: Tampines planning area
+```{r}
+clarkevans.test(childcare_tm_ppp,
+                correction="none",
+                clipregion=NULL,
+                alternative=c("two.sided"),
+                nsim=999)
+```
