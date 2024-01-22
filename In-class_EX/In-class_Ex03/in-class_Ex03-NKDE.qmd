@@ -1,0 +1,93 @@
+---
+title: "In-class Exercise 3 - NKDE"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+
+execute: 
+  eval: true
+  echo: true
+  warning: false
+date: "`r Sys.Date()`"
+---
+
+## Installing and loading R packages
+
+```{r}
+pacman::p_load(sf, spNetwork, tmap, classInt, viridis, tidyverse)
+```
+
+## Importing Data
+
+```{r}
+network <- st_read(dsn="data/geospatial", layer="Punggol_St")
+childcare <- st_read(dsn="data/geospatial", layer="Punggol_CC")
+```
+
+## Mapping geospatial dataset
+
+```{r}
+tmap_mode('view')
+tm_shape(childcare) + 
+  tm_dots() + 
+  tm_shape(network) + 
+  tm_lines()
+tmap_mode('plot')
+```
+
+## line segement
+
+length of a lixel is set at 750m and minimum length of a lixel is set at 375m
+
+```{r}
+lixels <- lixelize_lines(network, 750, mindist = 375)
+```
+
+## Generating line center point
+
+```{r}
+samples <-lines_center(lixels)
+```
+
+## Perform NKDE
+
+```{r}
+densities <- nkde(network, 
+                  events = childcare,
+                  w = rep(1,nrow(childcare)), 
+                  samples = samples,
+                  kernel_name = "quartic",
+                  bw = 300,
+                  div = "bw",
+                  method ="simple",
+                  digits = 3,
+                  tol = 1,
+                  grid_shape = c(1,1),
+                  max_depth = 8,
+                  agg =5,
+                  sparse = TRUE,
+                  verbose = FALSE)
+```
+
+## Visusalising NetKDE
+
+```{r}
+samples$density <- densities
+lixels$density <- densities
+```
+
+rescaling
+
+```{r}
+samples$density <- samples$density*1000
+lixels$density <- lixels$density*1000
+```
+
+```{r}
+tmap_mode('view')
+tm_shape(lixels)+
+  tm_lines(col="density")+
+tm_shape(childcare)+
+  tm_dots()
+```

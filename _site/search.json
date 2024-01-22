@@ -264,5 +264,61 @@
     "title": "In-class Exercise 3",
     "section": "Geospatial Data Wragling",
     "text": "Geospatial Data Wragling\n\nCreating ppp object: sf_method\n\n\nCode\nchildcare_ppp &lt;- as.ppp(childcare_sf)\n\n\n\n\nCode\nsummary(childcare_ppp)\n\n\nMarked planar point pattern:  1925 points\nAverage intensity 2.417323e-06 points per square unit\n\nCoordinates are given to 3 decimal places\ni.e. rounded to the nearest multiple of 0.001 units\n\nmarks are of type 'character'\nSummary:\n   Length     Class      Mode \n     1925 character character \n\nWindow: rectangle = [11810.03, 45404.24] x [25596.33, 49300.88] units\n                    (33590 x 23700 units)\nWindow area = 796335000 square units\n\n\n\n\nHandling Duplciate data\nWe can check the duplication in a ppp object by using the code chuck below.\n\n\nCode\nany(duplicated(childcare_ppp))\n\n\n[1] FALSE\n\n\n\n\nCode\nchildcare_ppp_jit &lt;- rjitter(childcare_ppp,retry=TRUE,nsim=1,drop=TRUE)\n\n\n\n\nCode\nany(duplicated(childcare_ppp_jit))\n\n\n[1] FALSE\n\n\nTo count the number of co-indicence point, we will use the multiplicity() function\n\n\nCreating owin object: sf_method\n\n\nCode\nsg_owin &lt;- as.owin(sg_sf)\n\n\n\n\nCode\nplot(sg_owin)\n\n\n\n\n\n\n\nCode\npg &lt;- mpsz_sf %&gt;% filter(PLN_AREA_N == \"PUNGGOL\")\ntm &lt;- mpsz_sf %&gt;% filter(PLN_AREA_N == \"TAMPINES\")\nck &lt;- mpsz_sf %&gt;% filter(PLN_AREA_N == \"CHOA CHU KANG\")\njw &lt;- mpsz_sf %&gt;% filter(PLN_AREA_N == \"JURONG WEST\")\n\n\n\n\nCode\npar(mfrow=c(2,2))\nplot(pg, main = \"Ponggol\")\n\n\n\n\n\nCode\nplot(tm, main = \"Tampines\")\n\n\n\n\n\nCode\nplot(ck, main = \"Choa Chu Kang\")\n\n\n\n\n\nCode\nplot(jw, main = \"Jurong West\")"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html",
+    "href": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html",
+    "title": "In-class Exercise 3 - NKDE",
+    "section": "",
+    "text": "Code\npacman::p_load(sf, spNetwork, tmap, classInt, viridis, tidyverse)"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html#installing-and-loading-r-packages",
+    "href": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html#installing-and-loading-r-packages",
+    "title": "In-class Exercise 3 - NKDE",
+    "section": "",
+    "text": "Code\npacman::p_load(sf, spNetwork, tmap, classInt, viridis, tidyverse)"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html#importing-data",
+    "href": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html#importing-data",
+    "title": "In-class Exercise 3 - NKDE",
+    "section": "Importing Data",
+    "text": "Importing Data\n\n\nCode\nnetwork &lt;- st_read(dsn=\"data/geospatial\", layer=\"Punggol_St\")\n\n\nReading layer `Punggol_St' from data source \n  `C:\\j00b00\\IS415-GAA\\In-class_EX\\In-class_Ex03\\data\\geospatial' \n  using driver `ESRI Shapefile'\nSimple feature collection with 2642 features and 2 fields\nGeometry type: LINESTRING\nDimension:     XY\nBounding box:  xmin: 34038.56 ymin: 40941.11 xmax: 38882.85 ymax: 44801.27\nProjected CRS: SVY21 / Singapore TM\n\n\nCode\nchildcare &lt;- st_read(dsn=\"data/geospatial\", layer=\"Punggol_CC\")\n\n\nReading layer `Punggol_CC' from data source \n  `C:\\j00b00\\IS415-GAA\\In-class_EX\\In-class_Ex03\\data\\geospatial' \n  using driver `ESRI Shapefile'\nSimple feature collection with 61 features and 1 field\nGeometry type: POINT\nDimension:     XYZ\nBounding box:  xmin: 34423.98 ymin: 41503.6 xmax: 37619.47 ymax: 44685.77\nz_range:       zmin: 0 zmax: 0\nProjected CRS: SVY21 / Singapore TM"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html#mapping-geospatial-dataset",
+    "href": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html#mapping-geospatial-dataset",
+    "title": "In-class Exercise 3 - NKDE",
+    "section": "Mapping geospatial dataset",
+    "text": "Mapping geospatial dataset\n\n\nCode\ntmap_mode('view')\ntm_shape(childcare) + \n  tm_dots() + \n  tm_shape(network) + \n  tm_lines()\n\n\n\n\n\n\n\nCode\ntmap_mode('plot')"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html#line-segement",
+    "href": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html#line-segement",
+    "title": "In-class Exercise 3 - NKDE",
+    "section": "line segement",
+    "text": "line segement\nlength of a lixel is set at 750m and minimum length of a lixel is set at 375m\n\n\nCode\nlixels &lt;- lixelize_lines(network, 750, mindist = 375)"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html#generating-line-center-point",
+    "href": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html#generating-line-center-point",
+    "title": "In-class Exercise 3 - NKDE",
+    "section": "Generating line center point",
+    "text": "Generating line center point\n\n\nCode\nsamples &lt;-lines_center(lixels)"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html#perform-nkde",
+    "href": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html#perform-nkde",
+    "title": "In-class Exercise 3 - NKDE",
+    "section": "Perform NKDE",
+    "text": "Perform NKDE\n\n\nCode\ndensities &lt;- nkde(network, \n                  events = childcare,\n                  w = rep(1,nrow(childcare)), \n                  samples = samples,\n                  kernel_name = \"quartic\",\n                  bw = 300,\n                  div = \"bw\",\n                  method =\"simple\",\n                  digits = 3,\n                  tol = 1,\n                  grid_shape = c(1,1),\n                  max_depth = 8,\n                  agg =5,\n                  sparse = TRUE,\n                  verbose = FALSE)"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html#visusalising-netkde",
+    "href": "In-class_EX/In-class_Ex03/in-class_Ex03-NKDE.html#visusalising-netkde",
+    "title": "In-class Exercise 3 - NKDE",
+    "section": "Visusalising NetKDE",
+    "text": "Visusalising NetKDE\n\n\nCode\nsamples$density &lt;- densities\nlixels$density &lt;- densities\n\n\nrescaling\n\n\nCode\nsamples$density &lt;- samples$density*1000\nlixels$density &lt;- lixels$density*1000\n\n\n\n\nCode\ntmap_mode('view')\ntm_shape(lixels)+\n  tm_lines(col=\"density\")+\ntm_shape(childcare)+\n  tm_dots()"
   }
 ]
