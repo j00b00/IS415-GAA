@@ -1,0 +1,52 @@
+---
+title: "In-class Exercise 04"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+
+execute: 
+  eval: true
+  echo: true
+  warning: false
+date: "`r Sys.Date()`"
+---
+
+Install and load R packages
+
+```{r}
+pacman::p_load(sf, spdep, tmap, tidyverse, knitr, GWmodel)
+```
+
+Import shape file into R environment
+```{r}
+hunan <- st_read(dsn = "data/geospatial", layer="Hunan")
+```
+Import CSV file into R environment
+```{r}
+hunan2012 <- read_csv("data/aspatial/Hunan_2012.csv")
+```
+Perform relation join (left-join)
+select function -> only choice the column needed
+
+```{r}
+hunan <- left_join(hunan,hunan2012) %>%
+  select(1:4,7,15)
+```
+
+Working with Geographically Weighted Summary Statistics (GWSS)
+```{r}
+hunan_sp <- hunan %>% as_Spatial()
+```
+bw = 6 as in 6 neighbor when adaptive =  TRUE
+use distance, adaptive = FALSE
+
+```{r}
+gwstat <- gwss(data = hunan_sp,
+               vars = "GDPPC",
+               bw = 6,
+               kernel = "bisquare",
+               adaptive = TRUE,
+               longlat = T)
+
+```

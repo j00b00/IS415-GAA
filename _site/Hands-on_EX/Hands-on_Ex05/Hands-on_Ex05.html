@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="dcterms.date" content="2024-01-27">
+<meta name="dcterms.date" content="2024-01-29">
 
 <title>IS415-GAA - Hands on Exercise 05 - Spatial Weights and Applications</title>
 <style>
@@ -160,6 +160,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="dropdown-item" href="../../In-class_Ex/In-class_ex03/In-class_Ex03-NKDE.html" rel="" target="">
  <span class="dropdown-text">In-class Exercise 3 - NKDE</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../../In-class_Ex/In-class_Ex04/In-class_Ex04.html" rel="" target="">
+ <span class="dropdown-text">In-class Exercise 4</span></a>
+  </li>  
     </ul>
   </li>
   <li class="nav-item dropdown ">
@@ -200,8 +204,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    
   <ul>
   <li><a href="#install-and-load-r-packages" id="toc-install-and-load-r-packages" class="nav-link active" data-scroll-target="#install-and-load-r-packages"><strong>1. Install and load R packages</strong></a></li>
-  <li><a href="#getting-the-data-into-r-environment-2.1-import-shape-file-into-r-environment" id="toc-getting-the-data-into-r-environment-2.1-import-shape-file-into-r-environment" class="nav-link" data-scroll-target="#getting-the-data-into-r-environment-2.1-import-shape-file-into-r-environment"><strong>2. Getting the Data into R environment 2.1 Import shape file into r environment</strong></a>
+  <li><a href="#getting-the-data-into-r-environment" id="toc-getting-the-data-into-r-environment" class="nav-link" data-scroll-target="#getting-the-data-into-r-environment"><strong>2. Getting the Data into R environment</strong></a>
   <ul class="collapse">
+  <li><a href="#import-shape-file-into-r-environment" id="toc-import-shape-file-into-r-environment" class="nav-link" data-scroll-target="#import-shape-file-into-r-environment"><strong>2.1 Import shape file into r environment</strong></a></li>
   <li><a href="#import-csv-file-into-r-environment" id="toc-import-csv-file-into-r-environment" class="nav-link" data-scroll-target="#import-csv-file-into-r-environment">2.2 Import CSV file into r environment</a></li>
   <li><a href="#performing-relational-join" id="toc-performing-relational-join" class="nav-link" data-scroll-target="#performing-relational-join">2.3 Performing relational join</a></li>
   </ul></li>
@@ -260,7 +265,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">January 27, 2024</p>
+      <p class="date">January 29, 2024</p>
     </div>
   </div>
   
@@ -279,8 +284,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </details>
 </div>
 </section>
-<section id="getting-the-data-into-r-environment-2.1-import-shape-file-into-r-environment" class="level1">
-<h1><strong>2. Getting the Data into R environment 2.1 Import shape file into r environment</strong></h1>
+<section id="getting-the-data-into-r-environment" class="level1">
+<h1><strong>2. Getting the Data into R environment</strong></h1>
+<section id="import-shape-file-into-r-environment" class="level2">
+<h2 class="anchored" data-anchor-id="import-shape-file-into-r-environment"><strong>2.1 Import shape file into r environment</strong></h2>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -297,6 +304,7 @@ Bounding box:  xmin: 108.7831 ymin: 24.6342 xmax: 114.2544 ymax: 30.12812
 Geodetic CRS:  WGS 84</code></pre>
 </div>
 </div>
+</section>
 <section id="import-csv-file-into-r-environment" class="level2">
 <h2 class="anchored" data-anchor-id="import-csv-file-into-r-environment">2.2 Import CSV file into r environment</h2>
 <div class="cell">

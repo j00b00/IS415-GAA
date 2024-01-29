@@ -18,7 +18,9 @@ date: "`r Sys.Date()`"
 pacman::p_load(sf, spdep, tmap, tidyverse, knitr)
 ```
 
-# **2. Getting the Data into R environment 2.1 Import shape file into r environment**
+# **2. Getting the Data into R environment** 
+
+## **2.1 Import shape file into r environment**
 
 ```{r}
 hunan <- st_read(dsn = "data/geospatial", layer="Hunan")
