@@ -12,98 +12,65 @@ execute:
 date: "`r Sys.Date()`"
 ---
 
-# **1. Introduction**
+1.  Introduction
 
 Apply appropriate spatial point patterns analysis methods to discover the geographical and spatio-temporal distribution of Grab hailing services locations in Singapore.
 
-# **2. Data**
+2.  Tasks Using appropriate function of sf and tidyverse, preparing the following geospatial data layer in sf tibble data.frames: Grab taxi location points either by origins or destinations. Road layer within Singapore excluding outer islands. Singapore boundary layer excluding outer islands Using the extracted data, derive traditional Kernel Density Estimation layers. Using the extracted data, derive either Network Kernel Density Estimation (NKDE) or Temporal Network Kernel Density Estimation (TNKDE) Using appropriate tmap functions, display the kernel density layers on openstreetmap of Singapore. Describe the spatial patterns revealed by the kernel density maps.
+
+3.  Data
 
 The following data sets will be used in the analysis
 
-# **3. Install and load packages**
+4.  Install and load packages
 
 ```{r}
-pacman::p_load(sf, tmap, tidyverse, arrow, lubridate)
+pacman::p_load(sf, tmap, tidyverse, arrow, lubridate, spatstat, maptools, raster, classInt, viridis, spNetwork)
 ```
 
-# **4. Data import**
-
-## **Import GrabPosisi Data**
+5.  Importing Data Import GrabPosisi Data
 
 ```{r}
 df <- read_parquet("data/Apstial/GrabPosisi/part-00000-8bbff892-97d2-4011-9961-703e38972569.c000.snappy.parquet")
 ```
 
-## Importing Bus stops data
+Import Master Plan 2019 subzone Boundary (No Sea) Data
 
 ```{r}
-bus_stop_sf <- st_read("data/Geospatial/BusStopLocation/BusStopLocation_Jul2023/BusStop.shp")
+mpsz_sf <- st_read("data/Geospatial/MPSZ-2019", layer="MPSZ-2019")
 ```
+
+Import Road data
 
 ```{r}
-bus_stop_sf <- st_transform(bus_stop_sf, crs = 3414)
-
-st_crs(bus_stop_sf)
+roads <- st_read(dsn = "data/Geospatial/malaysia-singapore-brunei-latest-free", layer= "gis_osm_roads_free_1")
 ```
 
-## Importing MRT stations data
-
-```{r}
-mrt_station_sf <- st_read("data/Geospatial/TrainStation/TrainStation_Feb2023/RapidTransitSystemStation.shp")
-```
-
-## Import Master Plan 2019 subzone Boundary (No Sea) Data
-
-```{r}
-mpsz_sf <- st_read("data/Geospatial/MasterPlan2019SubzoneBoundaryNoSeaGEOJSON.geojson")
-```
-
-## Import Road data
-
-```{r}
-sg_road <- st_read("data/Geospatial/malaysia-singapore-brunei-latest-free/gis_osm_roads_free_1.shp")
-```
-
-# **5. Data wrangling**
+6.  Data wrangling
 
 Pre-process and prepare data for analysis
 
-## Assign 3414 EPSG code to bus_stop_sf
+Transform mpsz_sf from wgs84 to svy21
 
 ```{r}
-bus_stop_sf <- st_set_crs(bus_stop_sf, 3414)
-st_crs(bus_stop_sf)
+mpsz3414 <- st_transform(mpsz_sf, crs = 3414)
+st_crs(mpsz3414)
 ```
 
-## Assign 3414 EPSG code to mrt_staion_sf
+transform roads from wgs84 to svy21
 
 ```{r}
-mrt_station_sf <- st_set_crs(mrt_station_sf, 3414)
-st_crs(mrt_station_sf)
+roads3414 <- st_transform(roads, crs = 3414)
+st_crs(roads3414)
 ```
 
-## Transfrom mpsz_sf from wgs84 to svy21
-
-```{r}
-mpsz_sf <- st_make_valid(mpsz_sf)
-mpsz_sf <- st_transform(mpsz_sf, crs = 3414)
-st_crs(mpsz_sf)
-```
-
-## transfrom sg_road from wgs84 to svy21
-
-```{r}
-sg_road <- st_transform(sg_road, crs = 3414)
-st_crs(sg_road)
-```
-
-## convert data type of pingtimestamp from character to date-time
+convert data type of pingtimestamp from character to date-time
 
 ```{r}
 df$pingtimestamp <- as_datetime(df$pingtimestamp)
 ```
 
-## Grab taxi location points by origins.
+Grab taxi location points by origins.
 
 ```{r}
 origin_df <- df %>%
@@ -115,7 +82,14 @@ origin_df <- df %>%
          day = factor(mday(pingtimestamp)))
 ```
 
-## Grab taxi location points either by destinations.
+```{r}
+origin_sf <- st_as_sf(origin_df,
+                      coords = c("rawlng", "rawlat"),
+                      crs = 4326) %>%
+  st_transform(crs = 3414)
+```
+
+Grab taxi location points either by destinations.
 
 ```{r}
 destination_df <- df %>%
@@ -127,13 +101,296 @@ destination_df <- df %>%
          day = factor(mday(pingtimestamp)))
 ```
 
-## Mapping bus stop data sets
+```{r}
+destination_sf <- st_as_sf(destination_df,
+                      coords = c("rawlng", "rawlat"),
+                      crs = 4326) %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+outer_island <- mpsz_sf[mpsz_sf$PLN_AREA_N == "SOUTHERN ISLANDS" | mpsz_sf$PLN_AREA_N == "NORTH-EASTERN ISLANDS" | mpsz_sf$PLN_AREA_N == "WESTERN ISLANDS",]
+```
+
+```{r}
+plot(st_geometry(outer_island))
+outer_island<- st_transform(outer_island, crs = 3414)
+```
+
+```{r}
+main_island <- st_difference(st_union(mpsz3414),st_union(outer_island))
+```
+
+```{r}
+plot(st_geometry(main_island))
+```
+
+```{r}
+main_road <- roads3414 %>% filter(maxspeed > 0)
+```
+
+```{r}
+sg_roads <- st_intersection(main_road, main_island)
+```
 
 ```{r}
 tmap_mode("plot")
-tm_shape(mpsz_sf)+tm_polygons()+tm_shape(bus_stop_sf)+tm_dots()
-
+tm_shape(main_island) + tm_polygons() + tm_shape(sg_roads) + tm_lines()
 ```
 
-## Mapping mrt station data sets
+```{r}
+origin <- as_Spatial(origin_sf)
+```
 
+```{r}
+mpsz <- as_Spatial(mpsz3414)
+```
+
+```{r}
+main_island <- as_Spatial(main_island)
+```
+
+```{r}
+sg_roads <- as_Spatial(sg_roads)
+```
+
+```{r}
+origin_sp <- as(origin, "SpatialPoints")
+```
+
+```{r}
+main_island_sp <- as(main_island, "SpatialPolygons")
+```
+
+```{r}
+sg_roads_sp <- as(sg_roads, "SpatialLines")
+```
+
+```{r}
+origin_sp
+```
+
+```{r}
+origin_ppp <- as(origin_sp, "ppp")
+```
+
+```{r}
+plot(origin_ppp)
+```
+
+```{r}
+summary(origin_ppp)
+```
+
+Handling Duplicate Point
+
+```{r}
+any(duplicated(origin_ppp))
+```
+
+Creating owin object
+
+```{r}
+main_island_owin <- as(main_island, "owin")
+```
+
+```{r}
+plot(main_island_owin)
+```
+
+```{r}
+summary(main_island_owin)
+```
+
+```{r}
+originSG_ppp = origin_ppp[main_island_owin]
+```
+
+```{r}
+summary(originSG_ppp)
+```
+
+```{r}
+plot(originSG_ppp)
+```
+
+```{r}
+bw <- bw.diggle(originSG_ppp)
+bw
+```
+
+```{r}
+originSG_ppp.km <- rescale(originSG_ppp, 1000, "km")
+```
+
+```{r}
+kde_originSG.bw = density(originSG_ppp.km, sigma=bw, edge = TRUE, kernel="gaussian")
+```
+
+```{r}
+plot(kde_originSG.bw)
+```
+
+```{r}
+kde_originSG_ppp_fixed <- density(originSG_ppp.km, sigma=bw, edge=TRUE, kernel="gaussian")
+plot(kde_originSG_ppp_fixed)
+```
+
+Computing KDE by using fixed bandwidth
+
+```{r}
+kde_originSG_ppp_adaptive <- adaptive.density(originSG_ppp.km, method="kernel")
+plot(kde_originSG_ppp_adaptive)
+```
+
+Converting KDE output into grid object
+
+```{r}
+gridded_kde_originSG_bw <- as.SpatialGridDataFrame.im(kde_originSG.bw)
+spplot(gridded_kde_originSG_bw)
+```
+
+Converting gridded output into raster
+
+```{r}
+kde_originSG_bw_raster <- raster(gridded_kde_originSG_bw)
+```
+
+```{r}
+kde_originSG_bw_raster
+```
+
+```{r}
+projection(kde_originSG_bw_raster) <- CRS("+init=EPSG:3414")
+kde_originSG_bw_raster
+```
+
+```{r}
+tm_shape(kde_originSG_bw_raster) + tm_raster("v") +
+  tm_layout(legend.position = c("right", "bottom"),frame = FALSE)
+```
+
+```{r}
+tmap_mode('view')
+tm_shape(origin_sf) + 
+  tm_dots() + 
+  tm_shape(sg_roads) +
+  tm_lines()
+```
+
+```{r}
+tmap_mode('plot')
+```
+
+```{r}
+pg = mpsz[mpsz@data$PLN_AREA_N == "PUNGGOL",]
+```
+
+```{r}
+plot(pg, main = "Ponggol")
+```
+
+```{r}
+ponggol <- mpsz3414[mpsz3414$PLN_AREA_N == "PUNGGOL",]
+```
+
+```{r}
+pg_roads <- st_intersection(roads3414,ponggol)
+```
+
+```{r}
+plot(st_geometry(pg_roads))
+```
+
+```{r}
+pg_origin <- st_intersection(origin_sf,ponggol)
+```
+
+```{r}
+plot(st_geometry(pg_origin))
+```
+
+```{r}
+tmap_mode('view')
+tm_shape(pg_origin) + 
+  tm_dots() + 
+  tm_shape(pg_roads) +
+  tm_lines()
+```
+
+```{r}
+tmap_mode("plot")
+```
+
+```{r}
+pg_roads = st_cast(pg_roads, "LINESTRING")
+```
+
+```{r}
+lixels <- lixelize_lines(pg_roads, 200, mindist = 100)
+```
+
+```{r}
+samples <- lines_center(lixels)
+```
+
+```{r}
+densities <- nkde(pg_roads, 
+                  events = pg_origin,
+                  w = rep(1,nrow(pg_origin)),
+                  samples = samples,
+                  kernel_name = "quartic",
+                  bw = 300, 
+                  div= "bw", 
+                  method = "simple", 
+                  digits = 1, 
+                  tol = 1,
+                  grid_shape = c(1,1), 
+                  max_depth = 8,
+                  agg = 5, #we aggregate events within a 5m radius (faster calculation)
+                  sparse = TRUE,
+                  verbose = FALSE)
+```
+
+```{r}
+samples$density <- densities
+lixels$density <- densities
+```
+
+```{r}
+samples$density <- samples$density*1000
+lixels$density <- lixels$density*1000
+```
+
+```{r}
+tmap_mode('view')
+tm_shape(lixels)+
+  tm_lines(col="density", lwd=5)+
+tm_shape(pg_origin)+
+  tm_dots(alpha = 0.3)
+```
+
+```{r}
+tmap_mode('plot')
+```
+
+```{r}
+pg_filter_origin <- pg_origin[-c(2:16)]
+```
+
+```{r}
+kfun_pg_origin <- kfunctions(pg_roads,
+                             pg_filter_origin,
+                             start = 0, 
+                             end = 1000, 
+                             step = 50, 
+                             width = 50, 
+                             nsim = 50, 
+                             resolution = 50,
+                             verbose = FALSE, 
+                             conf_int = 0.05)
+```
+
+```{r}
+kfun_pg_origin$plotk
+```
