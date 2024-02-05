@@ -1,0 +1,102 @@
+---
+title: "In-class Exercise 05"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+
+execute: 
+  eval: true
+  echo: true
+  warning: false
+date: "`r Sys.Date()`"
+---
+
+# Getting Started
+
+## Installing and uploading R packages
+
+```{r}
+pacman :: p_load (sf, tmap, sfdep, tidyverse)
+```
+
+# The Data
+
+## Importing geospatial Data
+
+```{r}
+hunan <- st_read(dsn = "data/geospatial", layer = "Hunan")
+```
+
+## Importing aspatial Data
+
+```{r}
+hunan2012 <- read_csv("data/aspatial/Hunan_2012.csv")
+```
+
+## Perform left join
+
+```{r}
+hunan_GDPPC <- left_join(hunan, hunan2012) %>%
+  select(1:4, 7, 15)
+```
+
+## Plot choropleth map
+
+```{r}
+tmap_mode("plot")
+tm_shape(hunan_GDPPC) +
+  tm_fill("GDPPC", 
+          style = "quantile", 
+          title = "GDPPC") + 
+  tm_layout(main.title = "Distribution of GDP per capita by country, Hunan Province", 
+            main.title.position = "center", 
+            main.title.size = 1.2, 
+            legend.height = 0.45, 
+            legend.width = 0.35, 
+            frame = TRUE) + 
+  tm_borders(alpha = 0.5) + 
+  tm_compass(type="8star", size = 2) + 
+  tm_scale_bar() + 
+  tm_grid(alpha = 0.2)
+
+```
+
+## Deriving contiguity weight: Queen method
+
+```{r}
+wm_q <- hunan_GDPPC %>%
+  mutate(nb = st_contiguity(geometry),
+         wt = st_weights(nb,
+                        style = "W"),
+         .before = 1)
+```
+
+## Compute Global Moran I
+
+```{r}
+moran_I <- global_moran(wm_q$GDPPC,
+                        wm_q$nb,
+                        wm_q$wt)
+glimpse(moran_I)
+
+```
+
+## Performing Global Moran I test
+
+```{r}
+global_moran_test(wm_q$GDPPC,
+             wm_q$nb,
+             wm_q$wt)
+```
+
+## Perform Global Moran I permutation test
+
+```{r}
+global_moran_perm(wm_q$GDPPC,
+                  wm_q$nb,
+                  wm_q$wt,
+                  nsim = 99)
+
+
+```
