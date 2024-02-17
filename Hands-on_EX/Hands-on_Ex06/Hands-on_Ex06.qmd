@@ -1,5 +1,5 @@
 ---
-title: "Hands-on Exercise 6 - Global Measures of Spatial Autocorrelation & Local Measures of Spatial Autocorrelation"
+title: "Hands-on Ex06 2nd Order Spatial Point Patterns Analysis Methods"
 format:
   html:
     code-fold: true
@@ -12,640 +12,488 @@ execute:
 date: "`r Sys.Date()`"
 ---
 
-1 Getting Started
+# 1.0 Overview
 
-1.1 The analytical question
+Spatial Point Pattern Analysis is the evaluation of the pattern or distribution, of a set of points on a surface. The point can be location of:
 
-In spatial policy, one of the main development objective of the local government and planners is to ensure equal distribution of development in the province. Our task in this study, hence, is to apply appropriate spatial statistical methods to discover if development are even distributed geographically. If the answer is No. Then, our next question will be “is there sign of spatial clustering?”. And, if the answer for this question is yes, then our next question will be “where are these clusters?”
+-   events such as crime, traffic accident and disease onset, or
 
-In this case study, we are interested to examine the spatial pattern of a selected development indicator (i.e. GDP per capita) of Hunan Provice, People Republic of China.
+-   business services (coffee and fastfood outlets) or facilities such as childcare and eldercare.
 
-1.1 The Study Area and Data
+Using appropriate functions of [spatstat](https://cran.r-project.org/web/packages/spatstat/), this hands-on exercise aims to discover the spatial point processes of childecare centres in Singapore.
 
-Two data sets will be used in this hands-on exercise, they are:
+# 2.0 **The data**
 
-Hunan province administrative boundary layer at county level. This is a geospatial data set in ESRI shapefile format.
-Hunan_2012.csv: This csv file contains selected Hunan’s local development indicators in 2012.
+-   `CHILDCARE`, a point feature data providing both location and attribute information of childcare centres. It was downloaded from Data.gov.sg and is in geojson format.
 
+-   `MP14_SUBZONE_WEB_PL`, a polygon feature data providing information of URA 2014 Master Plan Planning Subzone boundary data. It is in ESRI shapefile format. This data set was also downloaded from Data.gov.sg.
 
-1.2 Install and Load R packages
+-   `CostalOutline`, a polygon feature data showing the national boundary of Singapore. It is provided by SLA and is in ESRI shapefile format.
+
+# 3.0 Installing and loading the R packages
 
 ```{r}
-pacman::p_load(sf, spdep, tmap, tidyverse, dplyr)
+pacman::p_load(maptools, sf, raster, spatstat, tmap)
 ```
 
-2 Getting Data into R environment
+# 4.0 Spatial Data Wrangling
 
-2.1 Importing shape file into r environment
+## 4.1 **Importing the spatial data**
 
-Uses st_read() of sf package to import Hunan shapefile into R. The imported shapefile will be simple features Object of sf.
+In this section, [*st_read()*](https://r-spatial.github.io/sf/reference/st_read.html) of **sf** package will be used to import these three geospatial data sets into R.
 
 ```{r}
-hunan <- st_read(dsn = "data/geospatial", 
-                 layer = "Hunan")
+childcare_sf <- st_read("data/ChildCareServices.geojson") %>%
+  st_transform(crs = 3414)
+
+sg_sf <- st_read(dsn = "data", layer="CostalOutline")
+
+mpsz_sf <- st_read(dsn = "data", 
+                layer = "MP14_SUBZONE_WEB_PL")
 ```
 
-2.2 Importing csv file into environment
-
-Import Hunan_2012.csv into R by using read_csv() of readr package. The output is R data frame class.
+DIY retrieve the referencing system information
 
 ```{r}
-hunan2012 <- read_csv("data/aspatial/Hunan_2012.csv")
+st_crs(childcare_sf)
+st_crs(sg_sf)
+st_crs(mpsz_sf)
 ```
 
-2.3 Performing relational join
-
-Update the attribute table of hunan’s SpatialPolygonsDataFrame with the attribute fields of hunan2012 dataframe. This is performed by using left_join() of dplyr package.
+DIY assign correct crs to mpsz_sf and sg_sf
 
 ```{r}
-hunan <- left_join(hunan,hunan2012) %>%
-  dplyr::select(1:4, 7, 15)
+sg_sf <- st_set_crs(sg_sf, 3414)
+mpsz_sf <- st_set_crs(mpsz_sf, 3414)
+
+st_crs(childcare_sf)
+st_crs(sg_sf)
+st_crs(mpsz_sf)
 ```
 
-2.4 Visualising Regional Development Indicator
+## 4.2 Mapping the geospatial data sets
 
-Prepare a basemap and a choropleth map showing the distribution of GDPPC 2012 by using qtm() of tmap package.
+DIY Using the mapping methods learn in Hands-on Exercise 3, prepare a map
 
 ```{r}
-equal <- tm_shape(hunan) +
-  tm_fill("GDPPC",
-          n = 5,
-          style = "equal") +
-  tm_borders(alpha = 0.5) +
-  tm_layout(main.title = "Equal interval classification")
+tmap_mode("plot")
+tm_shape(mpsz_sf)+tm_polygons()+tm_shape(childcare_sf)+tm_dots()
 
-quantile <- tm_shape(hunan) +
-  tm_fill("GDPPC",
-          n = 5,
-          style = "quantile") +
-  tm_borders(alpha = 0.5) +
-  tm_layout(main.title = "Equal quantile classification")
-
-tmap_arrange(equal, 
-             quantile, 
-             asp=1, 
-             ncol=2)
 ```
 
-3 Global Measures of Spatial Autocorrelation 
+Notice that all the geospatial layers are within the same map extend. This shows that their referencing system and coordinate values are referred to similar spatial context. This is very important in any geospatial analysis.
 
-Compute global spatial autocorrelation statistics and to perform spatial complete randomness test for global spatial autocorrelation.
-
-3.1 Computing Contiguity Spatial Weights
-
-First, need to construct a spatial weights of the study area. The spatial weights is used to define the neighbourhood relationships between the geographical units (i.e. county) in the study area.
-
-spdep package is used to compute contiguity weight matrices for the study area. This function builds a neighbours list based on regions with contiguous boundaries. If you look at the documentation you will see that you can pass a “queen” argument that takes TRUE or FALSE as options. If you do not specify this argument the default is set to TRUE, that is, if you don’t specify queen = FALSE this function will return a list of first order neighbours using the Queen criteria.
-
-More specifically, the code chunk below is used to compute Queen contiguity weight matrix.
+Alternatively, we can also prepare a pin map by using the code chunk below.
 
 ```{r}
-wm_q <- poly2nb(hunan, 
-                queen=TRUE)
-summary(wm_q)
-```
-Summary report above shows that there are 88 area units in Hunan. The most connected area unit has 11 neighbours. There are two area units with only one neighbours.
-
-3.2 Row-standardized weights matrix
-
-Next,need to assign weights to each neighboring polygon. Each neighboring polygon will be assigned equal weight (style=“W”). This is accomplished by assigning the fraction 1/(#ofneighbors) to each neighboring county then summing the weighted income values.For this example, we’ll stick with the style=“W” option for simplicity’s sake but note that other more robust options are available, notably style=“B”.
-
-```{r}
-rswm_q <- nb2listw(wm_q, 
-                   style="W", 
-                   zero.policy = TRUE)
-rswm_q
+tmap_mode('view')
+tm_shape(childcare_sf)+
+  tm_dots()
+tmap_mode("plot")
 ```
 
-4 Global Measures of Spatial Autocorrelation: Moran’s I
+Notice that at the interactive mode, **tmap** is using [**leaflet for R**](https://rstudio.github.io/leaflet/) API. The advantage of this interactive pin map is it allows us to navigate and zoom around the map freely. We can also query the information of each simple feature (i.e. the point) by clicking of them. Last but not least, you can also change the background of the internet map layer. Currently, three internet map layers are provided.
 
-4.1 Maron’s I test
+# 5.0 Geospatial Data Wrangling
 
-Perform Moran’s I statistics testing by using moran.test() of spdep.
+Although simple feature data frame is gaining popularity again sp’s Spatial\* classes, there are, however, many geospatial analysis packages require the input geospatial data in sp’s Spatial\* classes. In this section, you will learn how to convert simple feature data frame to sp’s Spatial\* class.
+
+## 5.1 **Converting sf data frames to sp’s Spatial\* class**
+
+The code chunk below uses [*as_Spatial()*](https://r4gdsa.netlify.app/chap05) of **sf** package to convert the three geospatial data from simple feature data frame to sp’s Spatial\* class.
 
 ```{r}
-moran.test(hunan$GDPPC, 
-           listw=rswm_q, 
-           zero.policy = TRUE, 
-           na.action=na.omit)
+childcare <- as_Spatial(childcare_sf)
+mpsz <- as_Spatial(mpsz_sf)
+sg <- as_Spatial(sg_sf)
 ```
 
-4.2 Computing Monte Carlo Moran’s I
-Performs permutation test for Moran’s I statistic by using moran.mc() of spdep. A total of 1000 simulation will be performed.
+DIY display the information of spatial classes
+
 ```{r}
-set.seed(1234)
-bperm= moran.mc(hunan$GDPPC, 
-                listw=rswm_q, 
-                nsim=999, 
-                zero.policy = TRUE, 
-                na.action=na.omit)
-bperm
+subset(childcare)
+subset(mpsz)
+subset(sg)
 ```
 
-4.3 Visualising Monte Carlo Moran’s I
+## 5.2 Converting Spatial\* class into generic sp format
 
-Examine the simulated Moran’s I test statistics in greater detail. This can be achieved by plotting the distribution of the statistical values as a histogram
+**spatstat** requires the analytical data in ***ppp*** object form. There is no direct way to convert a Spatial\* classes into ***ppp*** object. We need to convert the ***Spatial*** **classes**\* into ***Spatial*** object first.
 
-In the code chunk below hist() and abline() of R Graphics are used.
+Next, you should display the sp objects properties as shown below.
+
 ```{r}
-mean(bperm$res[1:999])
+childcare_sp <- as(childcare, "SpatialPoints")
+sg_sp <- as(sg, "SpatialPolygons")
+
+childcare_sp
+sg_sp
 ```
 
+## 5.3 Converting generic sp format into spatstat's ppp format
+
+Now, we will use *as.ppp()* function of **spatstat** to convert the spatial data into **spatstat**’s ***ppp*** object format.
+
+Now, let us plot ***childcare_ppp*** and examine the different.
+
 ```{r}
-var(bperm$res[1:999])
+childcare_ppp <- as(childcare_sp, "ppp")
+childcare_ppp
+
+plot(childcare_ppp)
+
+summary(childcare_ppp)
 ```
 
+## 5.4 Handling duplicate points
+
+check the duplication in a ***ppp*** object
+
 ```{r}
-summary(bperm$res[1:999])
+any(duplicated(childcare_ppp))
 ```
 
+To count the number of co-indicence point, we will use the *multiplicity()* function
+
 ```{r}
-hist(bperm$res, 
-     freq=TRUE, 
-     breaks=20, 
-     xlab="Simulated Moran's I")
-abline(v=0, 
-       col="red") 
+multiplicity(childcare_ppp)
 ```
 
-5 Global Measures of Spatial Autocorrelation: Geary’s C
-
-5.1 Geary’s C test
-
-Performs Geary’s C test for spatial autocorrelation by using geary.test() of spdep.
+If we want to know how many locations have more than one point event, we can use the code
 
 ```{r}
-geary.test(hunan$GDPPC, listw=rswm_q)
+sum(multiplicity(childcare_ppp) > 1)
 ```
 
-5.2 Computing Monte Carlo Geary’s C
-
-Performs permutation test for Geary’s C statistic by using geary.mc() of spdep.
+view the locations of these duplicate point events, we will plot childcare data
 
 ```{r}
-set.seed(1234)
-bperm=geary.mc(hunan$GDPPC, 
-               listw=rswm_q, 
-               nsim=999)
-bperm
+tmap_mode('view')
+tm_shape(childcare) +
+  tm_dots(alpha=0.4, 
+          size=0.05)
+
+tmap_mode('plot')
 ```
 
-5.3 Visualising Monte Carlo Geary’s C
-Plot a histogram to reveal the distribution of the simulated values
+Overcome Challenge (How to spot the duplicate point form the map above)
+
+There are three ways to overcome this problem. The easiest way is to delete the duplicates. But, that will also mean that some useful point events will be lost.
+
+The second solution is use *jittering*, which will add a small perturbation to the duplicate points so that they do not occupy the exact same space.
+
+The third solution is to make each point “unique” and then attach the duplicates of the points to the patterns as **marks**, as attributes of the points. Then you would need analytical techniques that take into account these marks.
+
+The code chunk below implements the jittering approach.
 
 ```{r}
-mean(bperm$res[1:999])
+childcare_ppp_jit <- rjitter(childcare_ppp, 
+                             retry=TRUE, 
+                             nsim=1, 
+                             drop=TRUE)
+
+any(duplicated(childcare_ppp_jit))
 ```
 
+## 5.5 Creating owin object
+
+When analysing spatial point patterns, it is a good practice to confine the analysis with a geographical area like Singapore boundary. In **spatstat**, an object called ***owin*** is specially designed to represent this polygonal region.
+
 ```{r}
-var(bperm$res[1:999])
+sg_owin <- as(sg_sp, "owin")
+
+plot(sg_owin)
+
+summary(sg_owin)
 ```
 
+## 5.6 Combining point events objects and owin object
+
+Extract childcare events that are located within Singapore
+
 ```{r}
-summary(bperm$res[1:999])
+childcareSG_ppp = childcare_ppp[sg_owin]
+
+summary(childcareSG_ppp)
 ```
 
+DIY plot childcareSG_ppp
+
 ```{r}
-hist(bperm$res, freq=TRUE, breaks=20, xlab="Simulated Geary c")
-abline(v=1, col="red") 
+plot(childcareSG_ppp)
 ```
 
-6 Spatial Correlogram
-
-Spatial correlograms are great to examine patterns of spatial autocorrelation in your data or model residuals. They show how correlated are pairs of spatial observations when you increase the distance (lag) between them - they are plots of some index of autocorrelation (Moran’s I or Geary’s c) against distance.Although correlograms are not as fundamental as variograms (a keystone concept of geostatistics), they are very useful as an exploratory and descriptive tool. For this purpose they actually provide richer information than variograms.
-
-6.1 Compute Moran's coorelogram
-
-sp.correlogram() of spdep package is used to compute a 6-lag spatial correlogram of GDPPC. The global spatial autocorrelation used in Moran’s I. The plot() of base Graph is then used to plot the output.
+### 5.6.1Extracting study area
 
 ```{r}
-MI_corr <- sp.correlogram(wm_q, 
-                          hunan$GDPPC, 
-                          order=6, 
-                          method="I", 
-                          style="W")
-plot(MI_corr)
-```
-Plotting the output might not allow us to provide complete interpretation. This is because not all autocorrelation values are statistically significant. Hence, it is important for us to examine the full analysis report by printing out the analysis results as in the code chunk below.
-
-```{r}
-print(MI_corr)
+pg = mpsz[mpsz@data$PLN_AREA_N == "PUNGGOL",]
+tm = mpsz[mpsz@data$PLN_AREA_N == "TAMPINES",]
+ck = mpsz[mpsz@data$PLN_AREA_N == "CHOA CHU KANG",]
+jw = mpsz[mpsz@data$PLN_AREA_N == "JURONG WEST",]
 ```
 
-6.2 Compute Geary’s C correlogram and plot
-
-sp.correlogram() of spdep package is used to compute a 6-lag spatial correlogram of GDPPC. The global spatial autocorrelation used in Geary’s C. The plot() of base Graph is then used to plot the output.
+Plotting target planning areas
 
 ```{r}
-GC_corr <- sp.correlogram(wm_q, 
-                          hunan$GDPPC, 
-                          order=6, 
-                          method="C", 
-                          style="W")
-plot(GC_corr)
+par(mfrow=c(2,2))
+plot(pg, main = "Ponggol")
+plot(tm, main = "Tampines")
+plot(ck, main = "Choa Chu Kang")
+plot(jw, main = "Jurong West")
 ```
 
-Similar to the previous step, we will print out the analysis report 
+### 5.6.2 Convering the spatial point data frame into generic sp format
+
+Convert these SpatialPolygonsDataFrame layers into generic spatialpolygons layers.
 
 ```{r}
-print(GC_corr)
+pg_sp = as(pg, "SpatialPolygons")
+tm_sp = as(tm, "SpatialPolygons")
+ck_sp = as(ck, "SpatialPolygons")
+jw_sp = as(jw, "SpatialPolygons")
 ```
 
-7 Cluster and Outlier Analysis
+### 5.6.3 Create owin objects
 
-Local Indicators of Spatial Association or LISA are statistics that evaluate the existence of clusters in the spatial arrangement of a given variable. For instance if we are studying cancer rates among census tracts in a given city local clusters in the rates mean that there are areas that have higher or lower rates than is to be expected by chance alone; that is, the values occurring are above or below those of a random distribution in space.
-
-7.1 Computing local Moran’s I
-
-the localmoran() function of spdep will be used. It computes Ii values, given a set of zi values and a listw object providing neighbour weighting information for the polygon associated with the zi values.
-
-The code chunks below are used to compute local Moran’s I of GDPPC2012 at the county level.
+Convert these SpatialPolygons objects into owin objects that is required by **spatstat**.
 
 ```{r}
-fips <- order(hunan$County)
-localMI <- localmoran(hunan$GDPPC, rswm_q)
-head(localMI)
+pg_owin = as(pg_sp, "owin")
+tm_owin = as(tm_sp, "owin")
+ck_owin = as(ck_sp, "owin")
+jw_owin = as(jw_sp, "owin")
 ```
 
-localmoran() function returns a matrix of values whose columns are:
+### 5.6.4 Combining childcare points and the study area
 
-Ii: the local Moran’s I statistics
-E.Ii: the expectation of local moran statistic under the randomisation hypothesis
-Var.Ii: the variance of local moran statistic under the randomisation hypothesis
-Z.Ii:the standard deviate of local moran statistic
-Pr(): the p-value of local moran statistic
-The code chunk below list the content of the local Moran matrix derived by using printCoefmat().
+Extract childcare that is within the specific region to do our analysis later on.
 
 ```{r}
-printCoefmat(data.frame(
-  localMI[fips,], 
-  row.names=hunan$County[fips]),
-  check.names=FALSE)
+childcare_pg_ppp = childcare_ppp_jit[pg_owin] 
+childcare_tm_ppp = childcare_ppp_jit[tm_owin] 
+childcare_ck_ppp = childcare_ppp_jit[ck_owin] 
+childcare_jw_ppp = childcare_ppp_jit[jw_owin]
 ```
 
-7.1.1 Mapping the local Moran’s I
-
-Before mapping the local Moran’s I map, it is wise to append the local Moran’s I dataframe (i.e. localMI) onto hunan SpatialPolygonDataFrame. The code chunks below can be used to perform the task. The out SpatialPolygonDataFrame is called hunan.localMI.
+Next, *rescale()* function is used to trasnform the unit of measurement from metre to kilometre.
 
 ```{r}
-hunan.localMI <- cbind(hunan,localMI) %>%
-  rename(Pr.Ii = Pr.z....E.Ii..)
+childcare_pg_ppp.km = rescale(childcare_pg_ppp, 1000, "km")
+childcare_tm_ppp.km = rescale(childcare_tm_ppp, 1000, "km")
+childcare_ck_ppp.km = rescale(childcare_ck_ppp, 1000, "km")
+childcare_jw_ppp.km = rescale(childcare_jw_ppp, 1000, "km")
 ```
 
-7.1.2 Mapping local Moran’s I values
-Using choropleth mapping functions of tmap package, we can plot the local Moran’s I values by using the code chinks below.
+Plot these 4 study areas and the locations of the childcare centres
+
 ```{r}
-tm_shape(hunan.localMI) +
-  tm_fill(col = "Ii", 
-          style = "pretty",
-          palette = "RdBu",
-          title = "local moran statistics") +
-  tm_borders(alpha = 0.5)
+par(mfrow=c(2,2))
+plot(childcare_pg_ppp.km, main="Punggol")
+plot(childcare_tm_ppp.km, main="Tampines")
+plot(childcare_ck_ppp.km, main="Choa Chu Kang")
+plot(childcare_jw_ppp.km, main="Jurong West")
 ```
 
-7.1.3 Mapping local Moran’s I p-values
+# Second-order Spatial Point Patterns Analysis
 
-The choropleth shows there is evidence for both positive and negative Ii values. However, it is useful to consider the p-values for each of these values, as consider above.
+## 5.7 Analysing Spatial Point Process Using G-Function
 
-The code chunks below produce a choropleth map of Moran’s I p-values by using functions of tmap package.
+The G function measures the distribution of the distances from an arbitrary event to its nearest event. In this section, you will learn how to compute G-function estimation by using [*Gest()*](https://rdrr.io/cran/spatstat/man/Gest.html) of **spatstat** package. You will also learn how to perform monta carlo simulation test using [*envelope()*](https://rdrr.io/cran/spatstat/man/envelope.html) of **spatstat** package.
+
+### 5.7.1 Cho Chu Kang planning area (Computing G-function estimation)
 
 ```{r}
-tm_shape(hunan.localMI) +
-  tm_fill(col = "Pr.Ii", 
-          breaks=c(-Inf, 0.001, 0.01, 0.05, 0.1, Inf),
-          palette="-Blues", 
-          title = "local Moran's I p-values") +
-  tm_borders(alpha = 0.5)
+G_CK = Gest(childcare_ck_ppp, correction = "border")
+plot(G_CK, xlim=c(0,500))
 ```
 
-7.1.4 Mapping both local Moran’s I values and p-values
+#### 5.7.1.2 Performing Complete Spatial Randomness Test
 
-For effective interpretation, it is better to plot both the local Moran’s I values map and its corresponding p-values map next to each other.
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:
 
-The code chunk below will be used to create such visualisation.
+Ho = The distribution of childcare services at Choa Chu Kang are randomly distributed.
+
+H1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.
+
+The null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.
+
+Monte Carlo test with G-fucntion
 
 ```{r}
-localMI.map <- tm_shape(hunan.localMI) +
-  tm_fill(col = "Ii", 
-          style = "pretty", 
-          title = "local moran statistics") +
-  tm_borders(alpha = 0.5)
+G_CK.csr <- envelope(childcare_ck_ppp, Gest, nsim = 999)
 
-pvalue.map <- tm_shape(hunan.localMI) +
-  tm_fill(col = "Pr.Ii", 
-          breaks=c(-Inf, 0.001, 0.01, 0.05, 0.1, Inf),
-          palette="-Blues", 
-          title = "local Moran's I p-values") +
-  tm_borders(alpha = 0.5)
-
-tmap_arrange(localMI.map, pvalue.map, asp=1, ncol=2)
+plot(G_CK.csr)
 ```
 
-8 Creating a LISA Cluster Map
-
-LISA Cluster Map shows the significant locations color coded by type of spatial autocorrelation. The first step before we can generate the LISA cluster map is to plot the Moran scatterplot.
-
-8.1 Plotting Moran scatterplot
-
-Moran scatterplot is an illustration of the relationship between the values of the chosen attribute at each location and the average value of the same attribute at neighboring locations.
-
-The code chunk below plots the Moran scatterplot of GDPPC 2012 by using moran.plot() of spdep.
+### 5.7.2 Tampines planning area (Computing G-function estimation)
 
 ```{r}
-nci <- moran.plot(hunan$GDPPC, rswm_q,
-                  labels=as.character(hunan$County), 
-                  xlab="GDPPC 2012", 
-                  ylab="Spatially Lag GDPPC 2012")
-```
-Notice that the plot is split in 4 quadrants. The top right corner belongs to areas that have high GDPPC and are surrounded by other areas that have the average level of GDPPC.
-
-8.2 Plotting Moran scatterplot with standardised variable
-
-First we will use scale() to centers and scales the variable. Here centering is done by subtracting the mean (omitting NAs) the corresponding columns, and scaling is done by dividing the (centered) variable by their standard deviations.
-
-```{r}
-hunan$Z.GDPPC <- scale(hunan$GDPPC) %>% 
-  as.vector 
+G_tm = Gest(childcare_tm_ppp, correction = "best")
+plot(G_tm)
 ```
 
-The as.vector() added to the end is to make sure that the data type we get out of this is a vector, that map neatly into out dataframe.
+#### 5.7.2.2 Performing Complete Spatial Randomness Test
 
-Now, we are ready to plot the Moran scatterplot again by using the code chunk below.
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:
+
+Ho = The distribution of childcare services at Tampines are randomly distributed.
+
+H1= The distribution of childcare services at Tampines are not randomly distributed.
+
+The null hypothesis will be rejected is p-value is smaller than alpha value of 0.001.
+
+The code chunk below is used to perform the hypothesis testing.
 
 ```{r}
-nci2 <- moran.plot(hunan$Z.GDPPC, rswm_q,
-                   labels=as.character(hunan$County),
-                   xlab="z-GDPPC 2012", 
-                   ylab="Spatially Lag z-GDPPC 2012")
+G_tm.csr <- envelope(childcare_tm_ppp, Gest, correction = "all", nsim = 999)
+
+plot(G_tm.csr)
 ```
 
-8.3 Preparing LISA map classes
+## 5.8 Analysing Spatial Point Process Using F-Function
 
-The steps to prepare a LISA cluster map.
+The F function estimates the empty space function F(r) or its hazard rate h(r) from a point pattern in a window of arbitrary shape. In this section, you will learn how to compute F-function estimation by using [*Fest()*](https://rdrr.io/cran/spatstat/man/Fest.html) of **spatstat** package. You will also learn how to perform monta carlo simulation test using [*envelope()*](https://rdrr.io/cran/spatstat/man/envelope.html) of **spatstat** package.
+
+### 5.8.1 Choa Chu Kang planning area (Computing F-function estimation)
 
 ```{r}
-quadrant <- vector(mode="numeric",length=nrow(localMI))
+F_CK = Fest(childcare_ck_ppp)
+plot(F_CK)
 ```
 
-Next, derives the spatially lagged variable of interest (i.e. GDPPC) and centers the spatially lagged variable around its mean.
+### 5.8.2 Performing Complete Spatial Randomness Test
 
 ```{r}
-hunan$lag_GDPPC <- lag.listw(rswm_q, hunan$GDPPC)
-DV <- hunan$lag_GDPPC - mean(hunan$lag_GDPPC)     
+F_CK.csr <- envelope(childcare_ck_ppp, Fest, nsim = 999)
+
+plot(F_CK.csr)
 ```
 
-This is follow by centering the local Moran’s around the mean.
+### 5.8.3 Tampines planning area (Computing F-function estimation)
 
 ```{r}
-LM_I <- localMI[,1] - mean(localMI[,1])    
+F_tm = Fest(childcare_tm_ppp, correction = "best")
+plot(F_tm)
 ```
 
-Next, we will set a statistical significance level for the local Moran.
+## 5.8.3.1 Performing Complete Spatial Randomness Test
+
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:
+
+Ho = The distribution of childcare services at Tampines are randomly distributed.
+
+H1= The distribution of childcare services at Tampines are not randomly distributed.
+
+The null hypothesis will be rejected is p-value is smaller than alpha value of 0.001.
+
+The code chunk below is used to perform the hypothesis testing.
 
 ```{r}
-signif <- 0.05
+F_tm.csr <- envelope(childcare_tm_ppp, Fest, correction = "all", nsim = 999)
+
+plot(F_tm.csr)
 ```
 
-These four command lines define the low-low (1), low-high (2), high-low (3) and high-high (4) categories.
+## 5.9 Analysing Spatial Point Process Using K-Function
+
+### 5.9.1 Choa Chu Kang planning area (Computing K-function estimation)
 
 ```{r}
-quadrant[DV <0 & LM_I>0] <- 1
-quadrant[DV >0 & LM_I<0] <- 2
-quadrant[DV <0 & LM_I<0] <- 3  
-quadrant[DV >0 & LM_I>0] <- 4      
+K_ck = Kest(childcare_ck_ppp, correction = "Ripley")
+plot(K_ck, . -r ~ r, ylab= "K(d)-r", xlab = "d(m)")
 ```
 
-Lastly, places non-significant Moran in the category 0.
+#### 5.9.1.1 Performing Complete Spatial Randomness Test
+
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:
+
+Ho = The distribution of childcare services at Choa Chu Kang are randomly distributed.
+
+H1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.
+
+The null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.
+
+The code chunk below is used to perform the hypothesis testing.
 
 ```{r}
-quadrant[localMI[,5]>signif] <- 0
+K_ck.csr <- envelope(childcare_ck_ppp, Kest, nsim = 99, rank = 1, glocal=TRUE)
+
+plot(K_ck.csr, . - r ~ r, xlab="d", ylab="K(d)-r")
 ```
 
-In fact, we can combined all the steps into one single code chunk as shown below:
+### 5.9.2 Tampines planning area (Computing K-function estimation)
 
 ```{r}
-quadrant <- vector(mode="numeric",length=nrow(localMI))
-hunan$lag_GDPPC <- lag.listw(rswm_q, hunan$GDPPC)
-DV <- hunan$lag_GDPPC - mean(hunan$lag_GDPPC)     
-LM_I <- localMI[,1]   
-signif <- 0.05       
-quadrant[DV <0 & LM_I>0] <- 1
-quadrant[DV >0 & LM_I<0] <- 2
-quadrant[DV <0 & LM_I<0] <- 3  
-quadrant[DV >0 & LM_I>0] <- 4    
-quadrant[localMI[,5]>signif] <- 0
+K_tm = Kest(childcare_tm_ppp, correction = "Ripley")
+plot(K_tm, . -r ~ r,  ylab= "K(d)-r", xlab = "d(m)", xlim=c(0,1000))
 ```
 
-8.4 Plotting LISA map
+#### 5.9.2.1 Performing Complete Spatial Randomness Test
 
-Now, we can build the LISA map
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:
 
-```{r}
-hunan.localMI$quadrant <- quadrant
-colors <- c("#ffffff", "#2c7bb6", "#abd9e9", "#fdae61", "#d7191c")
-clusters <- c("insignificant", "low-low", "low-high", "high-low", "high-high")
+Ho = The distribution of childcare services at Tampines are randomly distributed.
 
-tm_shape(hunan.localMI) +
-  tm_fill(col = "quadrant", 
-          style = "cat", 
-          palette = colors[c(sort(unique(quadrant)))+1], 
-          labels = clusters[c(sort(unique(quadrant)))+1],
-          popup.vars = c("")) +
-  tm_view(set.zoom.limits = c(11,17)) +
-  tm_borders(alpha=0.5)
-```
-For effective interpretation, it is better to plot both the local Moran’s I values map and its corresponding p-values map next to each other.
+H1= The distribution of childcare services at Tampines are not randomly distributed.
 
-The code chunk below will be used to create such visualisation.
+The null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.
+
+The code chunk below is used to perform the hypothesis testing.
 
 ```{r}
-gdppc <- qtm(hunan, "GDPPC")
+K_tm.csr <- envelope(childcare_tm_ppp, Kest, nsim = 99, rank = 1, glocal=TRUE)
 
-hunan.localMI$quadrant <- quadrant
-colors <- c("#ffffff", "#2c7bb6", "#abd9e9", "#fdae61", "#d7191c")
-clusters <- c("insignificant", "low-low", "low-high", "high-low", "high-high")
-
-LISAmap <- tm_shape(hunan.localMI) +
-  tm_fill(col = "quadrant", 
-          style = "cat", 
-          palette = colors[c(sort(unique(quadrant)))+1], 
-          labels = clusters[c(sort(unique(quadrant)))+1],
-          popup.vars = c("")) +
-  tm_view(set.zoom.limits = c(11,17)) +
-  tm_borders(alpha=0.5)
-
-tmap_arrange(gdppc, LISAmap, 
-             asp=1, ncol=2)
+plot(K_tm.csr, . - r ~ r, xlab="d", ylab="K(d)-r", xlim=c(0,500))
 ```
 
-9 Hot Spot and Cold Spot Area Analysis 
+## 5.10 Analysing Spatial Point Process Using L-Function
 
-Beside detecting cluster and outliers, localised spatial statistics can be also used to detect hot spot and/or cold spot areas.
+### 5.10.1 Choa Chu Kang Planning area (Computing L-function estimation)
 
-The term ‘hot spot’ has been used generically across disciplines to describe a region or value that is higher relative to its surroundings 
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:
 
-9.1 Getis and Ord’s G-Statistics
+Ho = The distribution of childcare services at Choa Chu Kang are randomly distributed.
 
-An alternative spatial statistics to detect spatial anomalies is the Getis and Ord’s G-statistics (Getis and Ord, 1972; Ord and Getis, 1995). It looks at neighbours within a defined proximity to identify where either high or low values clutser spatially. Here, statistically significant hot-spots are recognised as areas of high values where other areas within a neighbourhood range also share high values too.
+H1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.
 
-The analysis consists of three steps:
+The null hypothesis will be rejected if p-value if smaller than alpha value of 0.001.
 
-Deriving spatial weight matrix
-Computing Gi statistics
-Mapping Gi statistics
-
-9.2 Deriving distance-based weight matrix
-
-First, we need to define a new set of neighbours. Whist the spatial autocorrelation considered units which shared borders, for Getis-Ord we are defining neighbours based on distance.
-
-There are two type of distance-based proximity matrix, they are:
-
-fixed distance weight matrix; and
-adaptive distance weight matrix.
-
-9.2.1 Deriving the centroid
-
-need points to associate with each polygon before we can make our connectivity graph. It will be a little more complicated than just running st_centroid() on the sf object: us.bound. We need the coordinates in a separate data frame for this to work. To do this we will use a mapping function. The mapping function applies a given function to each element of a vector and returns a vector of the same length. Our input vector will be the geometry column of us.bound. Our function will be st_centroid(). We will be using map_dbl variation of map from the purrr package. For more documentation, check out map documentation
-
-To get our longitude values we map the st_centroid() function over the geometry column of us.bound and access the longitude value through double bracket notation [[]] and 1. This allows us to get only the longitude, which is the first value in each centroid.
+The code chunk below is used to perform the hypothesis testing.
 
 ```{r}
-longitude <- map_dbl(hunan$geometry, ~st_centroid(.x)[[1]])
+L_ck = Lest(childcare_ck_ppp, correction = "Ripley")
+plot(L_ck, . -r ~ r, ylab= "L(d)-r", xlab = "d(m)")
 ```
 
-We do the same for latitude with one key difference. We access the second value per each centroid with [[2]].
+#### 5.10.1.1Performing Complete Spatial Randomness Test
 
 ```{r}
-latitude <- map_dbl(hunan$geometry, ~st_centroid(.x)[[2]])
+L_ck.csr <- envelope(childcare_ck_ppp, Lest, nsim = 99, rank = 1, glocal=TRUE)
+
+plot(L_ck.csr, . - r ~ r, xlab="d", ylab="L(d)-r")
 ```
 
-Now that we have latitude and longitude, we use cbind to put longitude and latitude into the same object.
+### 5.10.2 Tampines Planning area (Computing L-function estimation)
 
 ```{r}
-coords <- cbind(longitude, latitude)
+L_tm = Lest(childcare_tm_ppp, correction = "Ripley")
+plot(L_tm, . -r ~ r,ylab= "L(d)-r", xlab = "d(m)",xlim=c(0,1000))
 ```
 
-9.2.2 Determine the cut-off distance
+#### 5.10.2.1 Performing Complete Spatial Randomness Test
 
-Firstly, we need to determine the upper limit for distance band by using the steps below:
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:
 
-Return a matrix with the indices of points belonging to the set of the k nearest neighbours of each other by using knearneigh() of spdep.
-Convert the knn object returned by knearneigh() into a neighbours list of class nb with a list of integer vectors containing neighbour region number ids by using knn2nb().
-Return the length of neighbour relationship edges by using nbdists() of spdep. The function returns in the units of the coordinates if the coordinates are projected, in km otherwise.
-Remove the list structure of the returned object by using unlist().
+Ho = The distribution of childcare services at Tampines are randomly distributed.
 
-```{r}
-#coords <- coordinates(hunan)
-k1 <- knn2nb(knearneigh(coords))
-k1dists <- unlist(nbdists(k1, coords, longlat = TRUE))
-summary(k1dists)
-```
+H1= The distribution of childcare services at Tampines are not randomly distributed.
 
-The summary report shows that the largest first nearest neighbour distance is 61.79 km, so using this as the upper threshold gives certainty that all units will have at least one neighbour.
+The null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.
 
-9.2.3 Computing fixed distance weight matrix
-
-Now, we will compute the distance weight matrix by using dnearneigh() 
+The code chunk below will be used to perform the hypothesis testing.
 
 ```{r}
-wm_d62 <- dnearneigh(coords, 0, 62, longlat = TRUE)
-wm_d62
-```
+L_tm.csr <- envelope(childcare_tm_ppp, Lest, nsim = 99, rank = 1, glocal=TRUE)
 
-Next, nb2listw() is used to convert the nb object into spatial weights object.
-
-```{r}
-wm62_lw <- nb2listw(wm_d62, style = 'B')
-summary(wm62_lw)
-```
-
-9.3 Computing adaptive distance weight matrix
-
-One of the characteristics of fixed distance weight matrix is that more densely settled areas (usually the urban areas) tend to have more neighbours and the less densely settled areas (usually the rural counties) tend to have lesser neighbours. Having many neighbours smoothes the neighbour relationship across more neighbours.
-
-It is possible to control the numbers of neighbours directly using k-nearest neighbours, either accepting asymmetric neighbours or imposing symmetry as shown in the code chunk below.
-
-```{r}
-knn <- knn2nb(knearneigh(coords, k=8))
-knn
-```
-
-Next, nb2listw() is used to convert the nb object into spatial weights object.
-
-```{r}
-knn_lw <- nb2listw(knn, style = 'B')
-summary(knn_lw)
-```
-
-10 Computing Gi statistics 
-
-10.1 Gi statistics using fixed distance
-
-```{r}
-fips <- order(hunan$County)
-gi.fixed <- localG(hunan$GDPPC, wm62_lw)
-gi.fixed
-```
-
-The output of localG() is a vector of G or Gstar values, with attributes “gstari” set to TRUE or FALSE, “call” set to the function call, and class “localG”.
-
-The Gi statistics is represented as a Z-score. Greater values represent a greater intensity of clustering and the direction (positive or negative) indicates high or low clusters.
-
-Next, we will join the Gi values to their corresponding hunan sf data frame by using the code chunk below.
-
-```{r}
-hunan.gi <- cbind(hunan, as.matrix(gi.fixed)) %>%
-  rename(gstat_fixed = as.matrix.gi.fixed.)
-```
-
-In fact, the code chunk above performs three tasks. First, it convert the output vector (i.e. gi.fixed) into r matrix object by using as.matrix(). Next, cbind() is used to join hunan@data and gi.fixed matrix to produce a new SpatialPolygonDataFrame called hunan.gi. Lastly, the field name of the gi values is renamed to gstat_fixed by using rename().
-
-10.2 Mapping Gi values with fixed distance weights
-
-The code chunk below shows the functions used to map the Gi values derived using fixed distance weight matrix.
-
-```{r}
-gdppc <- qtm(hunan, "GDPPC")
-
-Gimap <-tm_shape(hunan.gi) +
-  tm_fill(col = "gstat_fixed", 
-          style = "pretty",
-          palette="-RdBu",
-          title = "local Gi") +
-  tm_borders(alpha = 0.5)
-
-tmap_arrange(gdppc, Gimap, asp=1, ncol=2)
-```
-
-10.3 Gi statistics using adaptive distance
-
-The code chunk below are used to compute the Gi values for GDPPC2012 by using an adaptive distance weight matrix (i.e knb_lw).
-
-```{r}
-fips <- order(hunan$County)
-gi.adaptive <- localG(hunan$GDPPC, knn_lw)
-hunan.gi <- cbind(hunan, as.matrix(gi.adaptive)) %>%
-  rename(gstat_adaptive = as.matrix.gi.adaptive.)
-```
-
-10.4 Mapping Gi values with adaptive distance weights
-
-It is time for us to visualise the locations of hot spot and cold spot areas. The choropleth mapping functions of tmap package will be used to map the Gi values.
-
-The code chunk below shows the functions used to map the Gi values derived using fixed distance weight matrix.
-
-```{r}
-gdppc<- qtm(hunan, "GDPPC")
-
-Gimap <- tm_shape(hunan.gi) + 
-  tm_fill(col = "gstat_adaptive", 
-          style = "pretty", 
-          palette="-RdBu", 
-          title = "local Gi") + 
-  tm_borders(alpha = 0.5)
-
-tmap_arrange(gdppc, 
-             Gimap, 
-             asp=1, 
-             ncol=2)
+plot(L_tm.csr, . - r ~ r,xlab="d", ylab="L(d)-r", xlim=c(0,500))
 ```
