@@ -1,0 +1,16 @@
+[
+  {
+    "objectID": "In-class_EX/In-class_Ex02/In-class_Ex02.html#import-data",
+    "href": "In-class_EX/In-class_Ex02/In-class_Ex02.html#import-data",
+    "title": "In-class Exercise 2",
+    "section": "Import Data",
+    "text": "Import Data\n\n\nCode\norigin_df &lt;- read_rds(\"data/rds/origin_df.rds\")\ndestination_df &lt;- read_rds(\"data/rds/destination_df.rds\")"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex04/In-class_Ex04.html",
+    "href": "In-class_EX/In-class_Ex04/In-class_Ex04.html",
+    "title": "In-class Exercise 04",
+    "section": "",
+    "text": "Install and load R packages\n\n\nCode\npacman::p_load(sf, spdep, tmap, tidyverse, knitr, GWmodel)\n\n\nImport shape file into R environment\n\n\nCode\nhunan &lt;- st_read(dsn = \"data/geospatial\", layer=\"Hunan\")\n\n\nReading layer `Hunan' from data source \n  `C:\\j00b00\\IS415-GAA\\In-class_EX\\In-class_Ex04\\data\\geospatial' \n  using driver `ESRI Shapefile'\nSimple feature collection with 88 features and 7 fields\nGeometry type: POLYGON\nDimension:     XY\nBounding box:  xmin: 108.7831 ymin: 24.6342 xmax: 114.2544 ymax: 30.12812\nGeodetic CRS:  WGS 84\n\n\nImport CSV file into R environment\n\n\nCode\nhunan2012 &lt;- read_csv(\"data/aspatial/Hunan_2012.csv\")\n\n\nPerform relation join (left-join) select function -&gt; only choice the column needed\n\n\nCode\nhunan &lt;- left_join(hunan,hunan2012) %&gt;%\n  select(1:4,7,15)\n\n\nWorking with Geographically Weighted Summary Statistics (GWSS)\n\n\nCode\nhunan_sp &lt;- hunan %&gt;% as_Spatial()\n\n\nbw = 6 as in 6 neighbor when adaptive = TRUE use distance, adaptive = FALSE\n\n\nCode\ngwstat &lt;- gwss(data = hunan_sp,\n               vars = \"GDPPC\",\n               bw = 6,\n               kernel = \"bisquare\",\n               adaptive = TRUE,\n               longlat = T)"
+  }
+]
