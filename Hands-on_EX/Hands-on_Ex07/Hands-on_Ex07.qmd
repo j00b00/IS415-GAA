@@ -55,7 +55,7 @@ Summary statistics of ict data.frame.
 summary(ict)
 ```
 
-## 2.2 Derive new variable using dplyr package 
+## 2.2 Derive new variable using dplyr package
 
 The unit of measurement of the values are number of household. Using these values directly will be bias by the underlying total number of households. In general, the townships with relatively higher total number of households will also have higher number of households owning radio, TV, etc.
 
@@ -85,7 +85,7 @@ summary(ict_derived)
 
 Notice that six new fields have been added into the data.frame. They are RADIO_PR, TV_PR, LLPHONE_PR, MPHONE_PR, COMPUTER_PR, and INTERNET_PR.
 
-# 3.0 Exploratory Data Analysis 
+# 3.0 Exploratory Data Analysis
 
 Plot the distribution of the variables (i.e. Number of households with radio) by using appropriate Exploratory Data Analysis (EDA)
 
@@ -178,7 +178,7 @@ ggarrange(radio, tv, llphone, mphone, computer, internet,
 
 ## 3.1 EDA usingn choropleth map
 
-### 3.1.1 Joining geospatial data with aspatial data 
+### 3.1.1 Joining geospatial data with aspatial data
 
 Need to combine both the geospatial data object (i.e. shan_sf) and aspatial data.frame object (i.e. ict_derived) into one. This will be performed by using the left_join function of dplyr package. The shan_sf simple feature data.frame will be used as the base data object and the ict_derived data.frame will be used as the join table.
 
@@ -241,7 +241,7 @@ tm_shape(shan_sf) +
   tm_layout(outer.margins=0, asp=0)
 ```
 
-# 4.0 Correlation Analysis 
+# 4.0 Correlation Analysis
 
 It is important for us to ensure that the cluster variables are not highly correlated.
 
@@ -259,11 +259,11 @@ corrplot.mixed(cluster_vars.cor,
 
 The correlation plot above shows that COMPUTER_PR and INTERNET_PR are highly correlated. This suggest that only one of them should be used in the cluster analysis instead of both.
 
-# 5.0 Hierarchical Cluster Analysis 
+# 5.0 Hierarchical Cluster Analysis
 
 The analysis consists of four major steps:
 
-## 5.1 Extracting clustering variables 
+## 5.1 Extracting clustering variables
 
 Extract the clustering variables from the shan_sf simple feature object into data.frame.
 
@@ -292,11 +292,11 @@ shan_ict <- select(cluster_vars, c(2:6))
 head(shan_ict, 10)
 ```
 
-## 5.2 Data Standardization 
+## 5.2 Data Standardization
 
 In general, multiple variables will be used in cluster analysis. It is not unusual their values range are different. In order to avoid the cluster analysis result is baised to clustering variables with large values, it is useful to standardise the input variables before performing cluster analysis.
 
-## 5.3 Min-Max standaraisation 
+## 5.3 Min-Max standaraisation
 
 Normalize() of heatmaply package is used to stadardisation the clustering variables by using Min-Max method. The summary() is then used to display the summary statistics of the standardised clustering variables.
 
@@ -322,7 +322,7 @@ Note: describe() of psych package is used here instead of summary() of Base R be
 
 **Warning: Z-score standardisation method should only be used if we would assume all variables come from some normal distribution.**
 
-## 5.5 Visualising the standardised clustering variables 
+## 5.5 Visualising the standardised clustering variables
 
 Beside reviewing the summary statistics of the standardised clustering variables, it is also a good practice to visualise their distribution graphical.
 
@@ -399,7 +399,7 @@ List the content of proxmat for visual inspection.
 proxmat
 ```
 
-## 5.7 Computing hierarchical clustering 
+## 5.7 Computing hierarchical clustering
 
 In R, there are several packages provide hierarchical clustering function. In this hands-on exercise, hclust() of R stats will be used.
 
@@ -436,7 +436,7 @@ map_dbl(m, ac)
 
 With reference to the output above, we can see that Ward’s method provides the strongest clustering structure among the four methods assessed. Hence, in the subsequent analysis, only Ward’s method will be used.
 
-## 5.9 Determining Optimal clusters 
+## 5.9 Determining Optimal clusters
 
 Another technical challenge face by data analyst in performing clustering analysis is to determine the optimal clusters to retain.
 
@@ -444,7 +444,7 @@ There are three commonly used methods to determine the optimal clusters, they ar
 
 Elbow Method Average Silhouette Method Gap Statistic Method
 
-## 5.9.1 Gap Statistic Method 
+## 5.9.1 Gap Statistic Method
 
 The gap statistic compares the total within intra-cluster variation for different values of k with their expected values under null reference distribution of the data. The estimate of the optimal clusters will be value that maximize the gap statistic (i.e., that yields the largest gap statistic). This means that the clustering structure is far away from the random uniform distribution of points.
 
@@ -472,7 +472,7 @@ With reference to the gap statistic graph above, the recommended number of clust
 
 Note: In addition to these commonly used approaches, the NbClust package, published by Charrad et al., 2014, provides 30 indices for determining the relevant number of clusters and proposes to users the best clustering scheme from the different results obtained by varying all combinations of number of clusters, distance measures, and clustering methods.
 
-## 5.10 Interpreting the dendograms 
+## 5.10 Interpreting the dendograms
 
 In the dendrogram displayed above, each leaf corresponds to one observation. As we move up the tree, observations that are similar to each other are combined into branches, which are themselves fused at a higher height.
 
@@ -487,13 +487,13 @@ rect.hclust(hclust_ward,
             border = 2:5)
 ```
 
-## 5.11 Visually-driven hierarchical cluster analysis 
+## 5.11 Visually-driven hierarchical cluster analysis
 
 In this section, we will learn how to perform visually-driven hiearchical clustering analysis by using heatmaply package.
 
 With heatmaply, we are able to build both highly interactive cluster heatmap or static cluster heatmap.
 
-### 5.11.1 Transforming the data frame into a matrix 
+### 5.11.1 Transforming the data frame into a matrix
 
 The data was loaded into a data frame, but it has to be a data matrix to make your heatmap.
 
@@ -524,7 +524,7 @@ heatmaply(normalize(shan_ict_mat),
           )
 ```
 
-## 5.12 Mapping the clusters formed 
+## 5.12 Mapping the clusters formed
 
 With closed examination of the dendragram above, we have decided to retain six clusters.
 
@@ -544,7 +544,7 @@ The code chunk below form the join in three steps:
 
 -   cbind() is used to append groups matrix onto shan_sf to produce an output simple feature object called shan_sf_cluster; and
 
--    rename of dplyr package is used to rename as.matrix.groups field as CLUSTER.
+-   rename of dplyr package is used to rename as.matrix.groups field as CLUSTER.
 
 ```{r}
 shan_sf_cluster <- cbind(shan_sf, as.matrix(groups)) %>%
@@ -559,11 +559,11 @@ qtm(shan_sf_cluster, "CLUSTER")
 
 The choropleth map above reveals the clusters are very fragmented. The is one of the major limitation when non-spatial clustering algorithm such as hierarchical cluster analysis method is used.
 
-# 6.0 Spatially Constrained Clustering: SKATER approach 
+# 6.0 Spatially Constrained Clustering: SKATER approach
 
 Derive spatially constrained cluster by using skater() method of spdep package.
 
-## 6.1 Converting into SpatialPloygonsDataFrame 
+## 6.1 Converting into SpatialPloygonsDataFrame
 
 First,convert shan_sf into SpatialPolygonsDataFrame. This is because SKATER function only support sp objects such as SpatialPolygonDataFrame.
 
@@ -573,7 +573,7 @@ Use as_Spatial() of sf package to convert shan_sf into a SpatialPolygonDataFrame
 shan_sp <- as_Spatial(shan_sf)
 ```
 
-## 6.2 Computing Neighbour 
+## 6.2 Computing Neighbour
 
 List Next, poly2nd() of spdep package will be used to compute the neighbours list from polygon list.
 
@@ -595,9 +595,9 @@ plot(shan.nb,
 
 Note that if you plot the network first and then the boundaries, some of the areas will be clipped. This is because the plotting area is determined by the characteristics of the first plot. In this example, because the boundary map extends further than the graph, we plot it first.
 
-## 6.3 Computing minimum spanning tree 
+## 6.3 Computing minimum spanning tree
 
-### 6.3.1 Calculating edge cost 
+### 6.3.1 Calculating edge cost
 
 Next, nbcosts() of spdep package is used to compute the cost of each edge. It is the distance between it nodes. This function compute this distance using a data.frame with observations vector in each node.
 
@@ -620,7 +620,7 @@ shan.w <- nb2listw(shan.nb,
 summary(shan.w)
 ```
 
-## 6.4 Computing minimum spanning tree 
+## 6.4 Computing minimum spanning tree
 
 The minimum spanning tree is computed by mean of the mstree() of spdep package
 
@@ -658,7 +658,7 @@ plot.mst(shan.mst,
          add=TRUE)
 ```
 
-## 6.5 Computing spatially constrained clusters using SKATERS method 
+## 6.5 Computing spatially constrained clusters using SKATERS method
 
 Compute the spatially constrained cluster using skater() of spdep package.
 
@@ -704,7 +704,7 @@ plot(clust6,
      add=TRUE)
 ```
 
-## 6.6 Visualizing the clusters in choropleth map 
+## 6.6 Visualizing the clusters in choropleth map
 
 Plot the newly derived clusters by using SKATER method.
 
@@ -730,11 +730,11 @@ tmap_arrange(hclust.map, shclust.map,
              asp=NA, ncol=2)
 ```
 
-# 7.0 Spatially Constrained Clustering: ClustGeo Method 
+# 7.0 Spatially Constrained Clustering: ClustGeo Method
 
 Using functions provided by ClustGeo package to perform non-spatially constrained hierarchical cluster analysis and spatially constrained cluster analysis.
 
-## 7.1 A short Note about ClustGeo pacakge 
+## 7.1 A short Note about ClustGeo pacakge
 
 ClustGeo package is an R package specially designed to support the need of performing spatially constrained cluster analysis. More specifically, it provides a Ward-like hierarchical clustering algorithm called hclustgeo() including spatial/geographical constraints.
 
@@ -742,7 +742,7 @@ In the nutshell, the algorithm uses two dissimilarity matrices D0 and D1 along w
 
 The idea is then to determine a value of alpha which increases the spatial contiguity without deteriorating too much the quality of the solution based on the variables of interest. This need is supported by a function called choicealpha().
 
-## 7.2 Ward-like hierarchical clustering: ClustGeo 
+## 7.2 Ward-like hierarchical clustering: ClustGeo
 
 ClustGeo package provides function called hclustgeo() to perform a typical Ward-like hierarchical clustering just like hclust() you learned in previous section.
 
@@ -775,7 +775,7 @@ shan_sf_ngeo_cluster <- cbind(shan_sf, as.matrix(groups)) %>%
 qtm(shan_sf_ngeo_cluster, "CLUSTER")
 ```
 
-## 7.3 Spatially Constrained Hierarchical Clustering 
+## 7.3 Spatially Constrained Hierarchical Clustering
 
 Before we can performed spatially constrained hierarchical clustering, a spatial distance matrix will be derived by using st_distance() of sf package.
 
@@ -817,9 +817,9 @@ Plot the map of the newly delineated spatially constrained clusters.
 qtm(shan_sf_Gcluster, "CLUSTER")
 ```
 
-# 8.0 Visual Interpretation of Clusters 
+# 8.0 Visual Interpretation of Clusters
 
-## 8.1 Visualizing individual clustering variable 
+## 8.1 Visualizing individual clustering variable
 
 Used to reveal the distribution of a clustering variable (i.e RADIO_PR) by cluster.
 
@@ -831,7 +831,7 @@ ggplot(data = shan_sf_ngeo_cluster,
 
 The boxplot reveals Cluster 3 displays the highest mean Radio Ownership Per Thousand Household. This is followed by Cluster 2, 1, 4, 6 and 5.
 
-## 8.2 Multivariate Visualization 
+## 8.2 Multivariate Visualization
 
 Past studies shown that parallel coordinate plot can be used to reveal clustering variables by cluster very effectively. In the code chunk below, ggparcoord() of GGally package
 
