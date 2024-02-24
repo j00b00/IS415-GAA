@@ -432,5 +432,103 @@
     "title": "Hands-on Exercise 5 - Global Measures of Spatial Autocorrelation & Local Measures of Spatial Autocorrelation",
     "section": "10.4 Mapping Gi values with adaptive distance weights",
     "text": "10.4 Mapping Gi values with adaptive distance weights\nIt is time for us to visualise the locations of hot spot and cold spot areas. The choropleth mapping functions of tmap package will be used to map the Gi values.\nThe code chunk below shows the functions used to map the Gi values derived using fixed distance weight matrix.\n\n\nCode\ngdppc&lt;- qtm(hunan, \"GDPPC\")\n\nGimap &lt;- tm_shape(hunan.gi) + \n  tm_fill(col = \"gstat_adaptive\", \n          style = \"pretty\", \n          palette=\"-RdBu\", \n          title = \"local Gi\") + \n  tm_borders(alpha = 0.5)\n\ntmap_arrange(gdppc, \n             Gimap, \n             asp=1, \n             ncol=2)"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex03/in-class_Ex03.html",
+    "href": "In-class_EX/In-class_Ex03/in-class_Ex03.html",
+    "title": "In-class Exercise 3",
+    "section": "",
+    "text": "Code\npacman::p_load(maptools, sf, raster, spatstat, tmap, tidyverse)"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex03/in-class_Ex03.html#installing-and-loading-r-packages",
+    "href": "In-class_EX/In-class_Ex03/in-class_Ex03.html#installing-and-loading-r-packages",
+    "title": "In-class Exercise 3",
+    "section": "",
+    "text": "Code\npacman::p_load(maptools, sf, raster, spatstat, tmap, tidyverse)"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex03/in-class_Ex03.html#spatial-data-wrangling",
+    "href": "In-class_EX/In-class_Ex03/in-class_Ex03.html#spatial-data-wrangling",
+    "title": "In-class Exercise 3",
+    "section": "Spatial Data Wrangling",
+    "text": "Spatial Data Wrangling"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex03/in-class_Ex03.html#geospatial-data-wragling",
+    "href": "In-class_EX/In-class_Ex03/in-class_Ex03.html#geospatial-data-wragling",
+    "title": "In-class Exercise 3",
+    "section": "Geospatial Data Wragling",
+    "text": "Geospatial Data Wragling\n\nCreating ppp object: sf_method\n\n\nCode\nchildcare_ppp &lt;- as.ppp(childcare_sf)\n\n\n\n\nCode\nsummary(childcare_ppp)\n\n\nMarked planar point pattern:  1925 points\nAverage intensity 2.417323e-06 points per square unit\n\nCoordinates are given to 3 decimal places\ni.e. rounded to the nearest multiple of 0.001 units\n\nmarks are of type 'character'\nSummary:\n   Length     Class      Mode \n     1925 character character \n\nWindow: rectangle = [11810.03, 45404.24] x [25596.33, 49300.88] units\n                    (33590 x 23700 units)\nWindow area = 796335000 square units\n\n\n\n\nHandling Duplciate data\nWe can check the duplication in a ppp object by using the code chuck below.\n\n\nCode\nany(duplicated(childcare_ppp))\n\n\n[1] FALSE\n\n\n\n\nCode\nchildcare_ppp_jit &lt;- rjitter(childcare_ppp,retry=TRUE,nsim=1,drop=TRUE)\n\n\n\n\nCode\nany(duplicated(childcare_ppp_jit))\n\n\n[1] FALSE\n\n\nTo count the number of co-indicence point, we will use the multiplicity() function\n\n\nCreating owin object: sf_method\n\n\nCode\nsg_owin &lt;- as.owin(sg_sf)\n\n\n\n\nCode\nplot(sg_owin)\n\n\n\n\n\n\n\nCode\npg &lt;- mpsz_sf %&gt;% filter(PLN_AREA_N == \"PUNGGOL\")\ntm &lt;- mpsz_sf %&gt;% filter(PLN_AREA_N == \"TAMPINES\")\nck &lt;- mpsz_sf %&gt;% filter(PLN_AREA_N == \"CHOA CHU KANG\")\njw &lt;- mpsz_sf %&gt;% filter(PLN_AREA_N == \"JURONG WEST\")\n\n\n\n\nCode\npar(mfrow=c(2,2))\nplot(pg, main = \"Ponggol\")\n\n\n\n\n\nCode\nplot(tm, main = \"Tampines\")\n\n\n\n\n\nCode\nplot(ck, main = \"Choa Chu Kang\")\n\n\n\n\n\nCode\nplot(jw, main = \"Jurong West\")"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex05/In-class_Ex05.html",
+    "href": "In-class_EX/In-class_Ex05/In-class_Ex05.html",
+    "title": "In-class Exercise 05",
+    "section": "",
+    "text": "Code\npacman :: p_load (sf, tmap, sfdep, tidyverse)"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex05/In-class_Ex05.html#installing-and-uploading-r-packages",
+    "href": "In-class_EX/In-class_Ex05/In-class_Ex05.html#installing-and-uploading-r-packages",
+    "title": "In-class Exercise 05",
+    "section": "",
+    "text": "Code\npacman :: p_load (sf, tmap, sfdep, tidyverse)"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex05/In-class_Ex05.html#importing-geospatial-data",
+    "href": "In-class_EX/In-class_Ex05/In-class_Ex05.html#importing-geospatial-data",
+    "title": "In-class Exercise 05",
+    "section": "Importing geospatial Data",
+    "text": "Importing geospatial Data\n\n\nCode\nhunan &lt;- st_read(dsn = \"data/geospatial\", layer = \"Hunan\")\n\n\nReading layer `Hunan' from data source \n  `C:\\j00b00\\IS415-GAA\\In-class_EX\\In-class_Ex05\\data\\geospatial' \n  using driver `ESRI Shapefile'\nSimple feature collection with 88 features and 7 fields\nGeometry type: POLYGON\nDimension:     XY\nBounding box:  xmin: 108.7831 ymin: 24.6342 xmax: 114.2544 ymax: 30.12812\nGeodetic CRS:  WGS 84"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex05/In-class_Ex05.html#importing-aspatial-data",
+    "href": "In-class_EX/In-class_Ex05/In-class_Ex05.html#importing-aspatial-data",
+    "title": "In-class Exercise 05",
+    "section": "Importing aspatial Data",
+    "text": "Importing aspatial Data\n\n\nCode\nhunan2012 &lt;- read_csv(\"data/aspatial/Hunan_2012.csv\")"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex05/In-class_Ex05.html#perform-left-join",
+    "href": "In-class_EX/In-class_Ex05/In-class_Ex05.html#perform-left-join",
+    "title": "In-class Exercise 05",
+    "section": "Perform left join",
+    "text": "Perform left join\n\n\nCode\nhunan_GDPPC &lt;- left_join(hunan, hunan2012) %&gt;%\n  select(1:4, 7, 15)"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex05/In-class_Ex05.html#plot-choropleth-map",
+    "href": "In-class_EX/In-class_Ex05/In-class_Ex05.html#plot-choropleth-map",
+    "title": "In-class Exercise 05",
+    "section": "Plot choropleth map",
+    "text": "Plot choropleth map\n\n\nCode\ntmap_mode(\"plot\")\ntm_shape(hunan_GDPPC) +\n  tm_fill(\"GDPPC\", \n          style = \"quantile\", \n          title = \"GDPPC\") + \n  tm_layout(main.title = \"Distribution of GDP per capita by country, Hunan Province\", \n            main.title.position = \"center\", \n            main.title.size = 1.2, \n            legend.height = 0.45, \n            legend.width = 0.35, \n            frame = TRUE) + \n  tm_borders(alpha = 0.5) + \n  tm_compass(type=\"8star\", size = 2) + \n  tm_scale_bar() + \n  tm_grid(alpha = 0.2)"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex05/In-class_Ex05.html#deriving-contiguity-weight-queen-method",
+    "href": "In-class_EX/In-class_Ex05/In-class_Ex05.html#deriving-contiguity-weight-queen-method",
+    "title": "In-class Exercise 05",
+    "section": "Deriving contiguity weight: Queen method",
+    "text": "Deriving contiguity weight: Queen method\n\n\nCode\nwm_q &lt;- hunan_GDPPC %&gt;%\n  mutate(nb = st_contiguity(geometry),\n         wt = st_weights(nb,\n                        style = \"W\"),\n         .before = 1)"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex05/In-class_Ex05.html#compute-global-moran-i",
+    "href": "In-class_EX/In-class_Ex05/In-class_Ex05.html#compute-global-moran-i",
+    "title": "In-class Exercise 05",
+    "section": "Compute Global Moran I",
+    "text": "Compute Global Moran I\n\n\nCode\nmoran_I &lt;- global_moran(wm_q$GDPPC,\n                        wm_q$nb,\n                        wm_q$wt)\nglimpse(moran_I)\n\n\nList of 2\n $ I: num 0.301\n $ K: num 7.64"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex05/In-class_Ex05.html#performing-global-moran-i-test",
+    "href": "In-class_EX/In-class_Ex05/In-class_Ex05.html#performing-global-moran-i-test",
+    "title": "In-class Exercise 05",
+    "section": "Performing Global Moran I test",
+    "text": "Performing Global Moran I test\n\n\nCode\nglobal_moran_test(wm_q$GDPPC,\n             wm_q$nb,\n             wm_q$wt)\n\n\n\n    Moran I test under randomisation\n\ndata:  x  \nweights: listw    \n\nMoran I statistic standard deviate = 4.7351, p-value = 1.095e-06\nalternative hypothesis: greater\nsample estimates:\nMoran I statistic       Expectation          Variance \n      0.300749970      -0.011494253       0.004348351"
+  },
+  {
+    "objectID": "In-class_EX/In-class_Ex05/In-class_Ex05.html#perform-global-moran-i-permutation-test",
+    "href": "In-class_EX/In-class_Ex05/In-class_Ex05.html#perform-global-moran-i-permutation-test",
+    "title": "In-class Exercise 05",
+    "section": "Perform Global Moran I permutation test",
+    "text": "Perform Global Moran I permutation test\n\n\nCode\nglobal_moran_perm(wm_q$GDPPC,\n                  wm_q$nb,\n                  wm_q$wt,\n                  nsim = 99)\n\n\n\n    Monte-Carlo simulation of Moran I\n\ndata:  x \nweights: listw  \nnumber of simulations + 1: 100 \n\nstatistic = 0.30075, observed rank = 100, p-value &lt; 2.2e-16\nalternative hypothesis: two.sided"
   }
 ]
