@@ -9,7 +9,6 @@ execute:
   eval: true
   echo: true
   warning: false
-  freeze: true
 date: "`r Sys.Date()`"
 ---
 
@@ -19,7 +18,7 @@ date: "`r Sys.Date()`"
 pacman::p_load(maptools, sf, raster, spatstat, tmap)
 ```
 
-## Sptial Data Wrangling
+## Spatial Data Wrangling
 
 # Importing the spatial data
 
