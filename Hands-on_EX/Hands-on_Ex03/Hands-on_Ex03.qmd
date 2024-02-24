@@ -9,6 +9,7 @@ execute:
   eval: true
   echo: true
   warning: false
+  freeze: true
 date: "`r Sys.Date()`"
 ---
 
@@ -86,7 +87,7 @@ subset(mpsz)
 subset(sg)
 ```
 
-# Converting Spatial* class into generic sp format
+# Converting Spatial\* class into generic sp format
 
 ```{r}
 childcare_sp <- as(childcare, "SpatialPoints")
@@ -333,13 +334,15 @@ jw_owin = as(jw_sp, "owin")
 
 # Combining childcare points and the study area
 
-```{r} 
+```{r}
 childcare_pg_ppp = childcare_ppp_jit[pg_owin] 
 childcare_tm_ppp = childcare_ppp_jit[tm_owin] 
 childcare_ck_ppp = childcare_ppp_jit[ck_owin] 
 childcare_jw_ppp = childcare_ppp_jit[jw_owin]
 ```
+
 # Rescale function -\> transform the unit of measurement from metre to kilometre.
+
 ```{r}
 childcare_pg_ppp.km = rescale(childcare_pg_ppp, 1000, "km")
 childcare_tm_ppp.km = rescale(childcare_tm_ppp, 1000, "km")
