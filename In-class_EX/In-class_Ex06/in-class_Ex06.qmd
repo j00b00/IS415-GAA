@@ -9,10 +9,12 @@ execute:
   eval: true
   echo: true
   warning: false
+  freeze: true
 date: "`r Sys.Date()`"
 ---
 
 Importing R packages
+
 ```{r}
 pacman::p_load(sf, tidyverse, spdep, sfdep, tmap)
 ```
