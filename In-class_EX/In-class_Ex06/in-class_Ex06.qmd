@@ -1,0 +1,18 @@
+---
+title: "In-class_Ex06"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+
+execute: 
+  eval: true
+  echo: true
+  warning: false
+date: "`r Sys.Date()`"
+---
+
+Importing R packages
+```{r}
+pacman::p_load(sf, tidyverse, spdep, sfdep, tmap)
+```
