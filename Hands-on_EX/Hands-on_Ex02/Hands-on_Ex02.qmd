@@ -2,7 +2,6 @@
 title: "Hands-on Exercise 2: Thematic Mapping and GeoVisualisation with R"
 execute: 
   warning: false
-  freeze: true
 date: "`r Sys.Date()`"
 ---
 
