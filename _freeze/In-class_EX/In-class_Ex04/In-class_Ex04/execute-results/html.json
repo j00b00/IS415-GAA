@@ -1,0 +1,14 @@
+{
+  "hash": "f8764230edf564299f71a2c4a6f71ff1",
+  "result": {
+    "markdown": "---\ntitle: \"In-class Exercise 04\"\nformat:\n  html:\n    code-fold: true\n    code-summary: \"Show the code\"\n\nexecute: \n  eval: true\n  echo: true\n  warning: false\n  freeze: true\ndate: \"2024-02-24\"\n---\n\n\nInstall and load R packages\n\n\n::: {.cell}\n\n```{.r .cell-code}\npacman::p_load(sf, spdep, tmap, tidyverse, knitr, GWmodel)\n```\n:::\n\n\nImport shape file into R environment\n\n\n::: {.cell}\n\n```{.r .cell-code}\nhunan <- st_read(dsn = \"data/geospatial\", layer=\"Hunan\")\n```\n\n::: {.cell-output .cell-output-stdout}\n```\nReading layer `Hunan' from data source \n  `C:\\j00b00\\IS415-GAA\\In-class_EX\\In-class_Ex04\\data\\geospatial' \n  using driver `ESRI Shapefile'\nSimple feature collection with 88 features and 7 fields\nGeometry type: POLYGON\nDimension:     XY\nBounding box:  xmin: 108.7831 ymin: 24.6342 xmax: 114.2544 ymax: 30.12812\nGeodetic CRS:  WGS 84\n```\n:::\n:::\n\n\nImport CSV file into R environment\n\n\n::: {.cell}\n\n```{.r .cell-code}\nhunan2012 <- read_csv(\"data/aspatial/Hunan_2012.csv\")\n```\n:::\n\n\nPerform relation join (left-join) select function -\\> only choice the column needed\n\n\n::: {.cell}\n\n```{.r .cell-code}\nhunan <- left_join(hunan,hunan2012) %>%\n  select(1:4,7,15)\n```\n:::\n\n\nWorking with Geographically Weighted Summary Statistics (GWSS)\n\n\n::: {.cell}\n\n```{.r .cell-code}\nhunan_sp <- hunan %>% as_Spatial()\n```\n:::\n\n\nbw = 6 as in 6 neighbor when adaptive = TRUE use distance, adaptive = FALSE\n\n\n::: {.cell}\n\n```{.r .cell-code}\ngwstat <- gwss(data = hunan_sp,\n               vars = \"GDPPC\",\n               bw = 6,\n               kernel = \"bisquare\",\n               adaptive = TRUE,\n               longlat = T)\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
