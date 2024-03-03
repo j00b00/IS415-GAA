@@ -800,7 +800,8 @@ tm_shape(ehsa_sig) +
   tm_borders(alpha = 0.4)
 ```
 
-# Conclusion
+
+# 12.0 Reflection
 
 After finishing Take-Home Exercise 2, I realized that I need more practice in working with data. Be it data wrangling or data manipulation. I had to try different ways to solve errors and problems during the exercise which took out a lot of my time.
 
