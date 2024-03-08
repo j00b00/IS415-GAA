@@ -718,13 +718,13 @@ table(ccs6)
 Lastly, we can also plot the pruned tree that shows the five clusters on top of the townshop area.
 
 ```{r}
-#plot(shan_sp, border=gray(.5))
-#plot(clust6, 
-#     coordinates(shan_sp), 
-#     cex.lab=.7,
-#     groups.colors=c("red","green","blue", "brown", "pink"),
-#     cex.circles=0.005, 
-#     add=TRUE)
+plot(shan_sp, border=gray(.5))
+plot(clust6, 
+     coordinates(shan_sp), 
+     cex.lab=.7,
+     groups.colors=c("red","green","blue", "brown", "pink"),
+     cex.circles=0.005, 
+     add=TRUE)
 ```
 
 ## 6.6 Visualizing the clusters in choropleth map
