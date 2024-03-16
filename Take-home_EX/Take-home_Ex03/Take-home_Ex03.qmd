@@ -1,0 +1,416 @@
+---
+title: "Take Home Excerise 03"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+
+execute: 
+  eval: true
+  echo: true
+  warning: false
+date: "`r Sys.Date()`"
+---
+
+Install and uploading R packages
+
+```{r}
+pacman::p_load(sp, spdep, tmap, sf, ClustGeo, 
+               ggpubr, cluster, factoextra, NbClust,
+               heatmaply, corrplot, psych, tidyverse, GGally)
+```
+
+Importing the data
+
+```{r}
+vietnam <- st_read(dsn = "data/geospatial", layer = "vnm_admbnda_adm1_gov_20201027") %>% select(c(0:3,5))
+```
+
+plot the geospatial data
+
+```{r}
+plot(st_geometry(vietnam))
+```
+
+```{r}
+tmap_options(max.categories = 63)
+tm_shape(vietnam) + tm_polygons("ADM1_EN")
+```
+
+Importing aspatial data
+
+```{r}
+pci_2021 <- read_csv("data/aspatial/pci_2021.csv")
+```
+
+```{r}
+pci_2021
+```
+
+lets rename the columns to make them more readable
+
+```{r}
+pci_2021 <- pci_2021 %>% 
+  rename(`overall_index` = `Sub-Index 10: Law & Order`, 
+         `security_ind` = `Good security situation in the province (%)`,
+         `theft_ind` = `Victim of theft or break-in last year (%)`,
+         `police_ind` = `Local police handle firm's case effectively (%)`,
+         `gangster_ind` = `Pay money to gangsters groups (%)`)
+```
+
+```{r}
+unique(pci_2021$Province)
+```
+
+We notice that some province names are not consistent with the map. We need to fix this.
+
+```{r}
+unique(vietnam$ADM1_EN)
+```
+
+show names that are in pci_2021 but not in vietnam
+
+```{r}
+pci_2021 %>% 
+  filter(!Province %in% vietnam$ADM1_EN) %>% 
+  select(Province)
+```
+
+let's replace these names in pci with the names in vn for us to be able to join the two datasets
+
+```{r}
+pci_2021 <- pci_2021 %>% 
+  mutate(Province = case_when(
+    Province == "BRVT" ~ "Ba Ria - Vung Tau",
+    Province == "Can Tho" ~ "Can Tho city",
+    Province == "Da Nang" ~ "Da Nang city",
+    Province == "HCMC" ~ "Ho Chi Minh city",
+    Province == "Hai Phong" ~ "Hai Phong city",
+    Province == "TT-Hue" ~ "Thua Thien Hue",
+    TRUE ~ Province
+  ))
+```
+
+lets check again
+
+```{r}
+pci_2021 %>% 
+  filter(!Province %in% vietnam$ADM1_EN) %>% 
+  select(Province)
+```
+
+Looks like we're good to go!
+
+we first need to remove the % sign in the last 4 columns of pci and convert it to integer datatype
+
+```{r}
+pci_2021 <- pci_2021 %>% 
+  mutate(across(ends_with("ind"), ~as.integer(str_remove(., "%"))))
+```
+
+```{r}
+summary(pci_2021)
+```
+
+EDA
+
+Histogram
+
+```{r}
+ggplot(data=pci_2021, 
+       aes(x=`security_ind`)) +
+  geom_histogram(bins=20, 
+                 color="black", 
+                 fill="light blue")
+```
+
+```{r}
+ggplot(data=pci_2021, 
+       aes(x=`theft_ind`)) +
+  geom_histogram(bins=20, 
+                 color="black", 
+                 fill="light blue")
+```
+
+```{r}
+ggplot(data=pci_2021, 
+       aes(x=`police_ind`)) +
+  geom_histogram(bins=20, 
+                 color="black", 
+                 fill="light blue")
+```
+
+```{r}
+ggplot(data=pci_2021, 
+       aes(x=`gangster_ind`)) +
+  geom_histogram(bins=20, 
+                 color="black", 
+                 fill="light blue")
+```
+
+Boxplot
+
+```{r}
+ggplot(data=pci_2021, 
+       aes(x=`security_ind`)) +
+  geom_boxplot(color="black", 
+               fill="light blue")
+```
+
+```{r}
+ggplot(data=pci_2021, 
+       aes(x=`theft_ind`)) +
+  geom_boxplot(color="black", 
+               fill="light blue")
+```
+
+```{r}
+ggplot(data=pci_2021, 
+       aes(x=`police_ind`)) +
+  geom_boxplot(color="black", 
+               fill="light blue")
+```
+
+```{r}
+ggplot(data=pci_2021, 
+       aes(x=`gangster_ind`)) +
+  geom_boxplot(color="black", 
+               fill="light blue")
+```
+
+EDA using choropleth map
+
+Joining the two datasets
+
+```{r}
+combined_data <- left_join(vietnam, pci_2021, by=c("ADM1_EN"="Province"))
+  
+write_rds(combined_data, "data/rds/combined_data.rds")
+```
+
+Preparing a choropleth map
+
+```{r}
+qtm(combined_data, "security_ind")
+```
+
+Correlation analysis
+
+```{r}
+cluster_vars.cor = cor(pci_2021[,4:7])
+corrplot.mixed(cluster_vars.cor,
+         lower = "ellipse", 
+               upper = "number",
+               tl.pos = "lt",
+               diag = "l",
+               tl.col = "black")
+```
+
+Hierarchy Cluster Analysis
+
+```{r}
+cluster_vars <- combined_data %>%
+  st_set_geometry(NULL) %>%
+  select("ADM1_EN","security_ind", "theft_ind", "police_ind", "gangster_ind")
+head(cluster_vars,10)
+```
+
+```{r}
+row.names(cluster_vars) <- cluster_vars$"ADM1_EN"
+head(cluster_vars,10)
+```
+
+```{r}
+combined_data <- select(cluster_vars, c(2:5))
+head(combined_data, 10)
+```
+
+Data Standardization
+
+Min-Max standardisation
+
+```{r}
+combined_data.std <- normalize(combined_data)
+summary(combined_data.std)
+```
+
+```{r}
+combined_data.z <- normalize(combined_data)
+summary(combined_data.z)
+```
+
+visualizing standardized clustering variables
+
+```{r}
+r <- ggplot(data=pci_2021, 
+             aes(x= `security_ind`)) +
+  geom_histogram(bins=20, 
+                 color="black", 
+                 fill="light blue") +
+  ggtitle("Raw values without standardisation")
+
+combined_data_std_df <- as.data.frame(combined_data.std)
+s <- ggplot(data=combined_data_std_df, 
+       aes(x=`security_ind`)) +
+  geom_histogram(bins=20, 
+                 color="black", 
+                 fill="light blue") +
+  ggtitle("Min-Max Standardisation")
+
+combined_data_z_df <- as.data.frame(combined_data.z)
+z <- ggplot(data=combined_data_z_df, 
+       aes(x=`security_ind`)) +
+  geom_histogram(bins=20, 
+                 color="black", 
+                 fill="light blue") +
+  ggtitle("Z-score Standardisation")
+
+ggarrange(r, s, z,
+          ncol = 3,
+          nrow = 1)
+```
+
+```{r}
+r <- ggplot(data=pci_2021, 
+             aes(x= `security_ind`)) +
+  geom_density(bins=20, 
+                 color="black", 
+                 fill="light blue") +
+  ggtitle("Raw values without standardisation")
+
+combined_data_std_df <- as.data.frame(combined_data.std)
+s <- ggplot(data=combined_data_std_df, 
+       aes(x=`security_ind`)) +
+    geom_density(bins=20, 
+                 color="black", 
+                 fill="light blue") +
+  ggtitle("Min-Max Standardisation")
+
+combined_data_z_df <- as.data.frame(combined_data.z)
+z <- ggplot(data=combined_data_z_df, 
+       aes(x=`security_ind`)) +
+    geom_density(bins=20, 
+                 color="black", 
+                 fill="light blue") +
+  ggtitle("Z-score Standardisation")
+
+ggarrange(r, s, z,
+          ncol = 3,
+          nrow = 1)
+
+```
+
+computing proximity matrix
+
+```{r}
+proxmat <- dist(combined_data, method = 'euclidean')
+```
+
+```{r}
+proxmat
+```
+
+```{r}
+hclust_ward <- hclust(proxmat, method = 'ward.D')
+```
+
+```{r}
+#| fig.height=10
+plot(hclust_ward, cex = 0.6)
+```
+
+Selecting optimal clustering algorithm
+
+```{r}
+m <- c( "average", "single", "complete", "ward")
+names(m) <- c( "average", "single", "complete", "ward")
+
+ac <- function(x) {
+  agnes(combined_data, method = x)$ac
+}
+
+map_dbl(m, ac)
+```
+
+Determining optial Clusters
+
+Elbow method
+
+```{r}
+fviz_nbclust(combined_data, kmeans, method = "wss")
+```
+
+Average silhouette method
+
+```{r}
+fviz_nbclust(combined_data, pam, method = "silhouette")
+```
+
+Gap statistic method
+
+```{r}
+set.seed(12345)
+gap_stat <- clusGap(combined_data, 
+                    FUN = hcut, 
+                    nstart = 25, 
+                    K.max = 10, 
+                    B = 50)
+# Print the result
+print(gap_stat, method = "firstmax")
+```
+
+```{r}
+fviz_gap_stat(gap_stat)
+```
+
+Interpreting Dendogram
+
+```{r}
+#| fig.height=10
+plot(hclust_ward, cex = 0.6)
+rect.hclust(hclust_ward, 
+            k = 3, 
+            border = 2:5)
+```
+
+Visually-driven hierarchical clustering analysis
+
+transforming the data to matrix
+
+```{r}
+combined_data_mat <- data.matrix(combined_data)
+```
+
+plotting interactive cluster heatmap using heatmaply()
+
+```{r}
+#| fig.height=10
+heatmaply(normalize(combined_data_mat),
+          Colv=NA,
+          dist_method = "euclidean",
+          hclust_method = "ward.D",
+          seriate = "OLO",
+          colors = Blues,
+          k_row = 3,
+          margins = c(NA,200,60,NA),
+          fontsize_row = 4,
+          fontsize_col = 5,
+          main="Geographic Segmentation of Vietnam Provinces by PCI indicators",
+          xlab = "PCI Indicators",
+          ylab = "Province of Vietnam"
+          )
+```
+
+Mapping cluster formed
+
+```{r}
+groups <- as.factor(cutree(hclust_ward, k=3))
+```
+
+```{r}
+vietnam_cluster <- cbind(vietnam, as.matrix(groups)) %>% rename("CLUSTER" = "as.matrix.groups.")
+```
+
+```{r}
+qtm(vietnam_cluster, "CLUSTER")
+```

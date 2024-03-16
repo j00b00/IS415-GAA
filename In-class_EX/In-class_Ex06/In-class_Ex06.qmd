@@ -33,7 +33,6 @@ shan_sf <- st_read(dsn = "data/geospatial",
 class(shan_sf)
 ```
 
-
 view the content of the newly created shan_sf simple features data.frame
 
 ```{r}
@@ -189,8 +188,8 @@ Need to combine both the geospatial data object (i.e. shan_sf) and aspatial data
 
 The unique identifier used to join both data objects is TS_PCODE.
 
-Geometry file should be first. 
-st_join, both file must be sf file.
+Geometry file should be first. st_join, both file must be sf file.
+
 ```{r}
 #| eval: False
 shan_sf <- left_join(shan_sf, 
@@ -555,7 +554,6 @@ The code chunk below form the join in three steps:
 -   cbind() is used to append groups matrix onto shan_sf to produce an output simple feature object called shan_sf_cluster; and
 
 -   rename of dplyr package is used to rename as.matrix.groups field as CLUSTER.
-
 
 cbind is column binding. No sorting, if not cbind is not allow
 
