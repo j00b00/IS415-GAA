@@ -12,7 +12,7 @@ execute:
 date: "`r Sys.Date()`"
 ---
 
-Install and uploading R packages
+# 1.0 Install and uploading R packages
 
 ```{r}
 pacman::p_load(sp, spdep, tmap, sf, ClustGeo, 
@@ -20,13 +20,15 @@ pacman::p_load(sp, spdep, tmap, sf, ClustGeo,
                heatmaply, corrplot, psych, tidyverse, GGally)
 ```
 
-Importing the data
+# 2.0 Data
+
+## 2.1 Importing geospatial data
 
 ```{r}
 vietnam <- st_read(dsn = "data/geospatial", layer = "vnm_admbnda_adm1_gov_20201027") %>% select(c(0:3,5))
 ```
 
-plot the geospatial data
+### 2.1.1 Plotting the geospatial data
 
 ```{r}
 plot(st_geometry(vietnam))
@@ -37,7 +39,7 @@ tmap_options(max.categories = 63)
 tm_shape(vietnam) + tm_polygons("ADM1_EN")
 ```
 
-Importing aspatial data
+## 2.2 Importing aspatial data
 
 ```{r}
 pci_2021 <- read_csv("data/aspatial/pci_2021.csv")
@@ -47,7 +49,9 @@ pci_2021 <- read_csv("data/aspatial/pci_2021.csv")
 pci_2021
 ```
 
-lets rename the columns to make them more readable
+# 3.0 Data Wrangling
+
+Rename the columns
 
 ```{r}
 pci_2021 <- pci_2021 %>% 
@@ -58,17 +62,19 @@ pci_2021 <- pci_2021 %>%
          `gangster_ind` = `Pay money to gangsters groups (%)`)
 ```
 
+Finding the unique Province in pci_2021 (aspatial data)
+
 ```{r}
 unique(pci_2021$Province)
 ```
 
-We notice that some province names are not consistent with the map. We need to fix this.
+Finding the unique Province in Vietnam (geospatial data)
 
 ```{r}
 unique(vietnam$ADM1_EN)
 ```
 
-show names that are in pci_2021 but not in vietnam
+Finding the province that appear in pci_2021 but not in Vietnam
 
 ```{r}
 pci_2021 %>% 
@@ -76,7 +82,7 @@ pci_2021 %>%
   select(Province)
 ```
 
-let's replace these names in pci with the names in vn for us to be able to join the two datasets
+Rename the Province's name in pci_2021 with the name in Vietnam
 
 ```{r}
 pci_2021 <- pci_2021 %>% 
@@ -91,17 +97,13 @@ pci_2021 <- pci_2021 %>%
   ))
 ```
 
-lets check again
-
 ```{r}
 pci_2021 %>% 
   filter(!Province %in% vietnam$ADM1_EN) %>% 
   select(Province)
 ```
 
-Looks like we're good to go!
-
-we first need to remove the % sign in the last 4 columns of pci and convert it to integer datatype
+Removing the percentage sign so that the data become numerical
 
 ```{r}
 pci_2021 <- pci_2021 %>% 
@@ -111,18 +113,27 @@ pci_2021 <- pci_2021 %>%
 ```{r}
 summary(pci_2021)
 ```
-
-EDA
-
-Histogram
+Saving to rds
 
 ```{r}
-ggplot(data=pci_2021, 
+write_rds(pci_2021, "data/rds/pci_2021.rds")
+```
+
+# 4.0 Exploratory Data Analysis
+
+## 4.1 Plotting of Histogram
+
+### 4.1.1 Using the column (security_ind)
+
+```{r}
+ggplot(data=pci_2021,
        aes(x=`security_ind`)) +
   geom_histogram(bins=20, 
                  color="black", 
                  fill="light blue")
 ```
+
+### 4.1.2 Using the column (theft_ind)
 
 ```{r}
 ggplot(data=pci_2021, 
@@ -132,6 +143,8 @@ ggplot(data=pci_2021,
                  fill="light blue")
 ```
 
+### 4.1.3 Using the column (police_ind)
+
 ```{r}
 ggplot(data=pci_2021, 
        aes(x=`police_ind`)) +
@@ -139,6 +152,8 @@ ggplot(data=pci_2021,
                  color="black", 
                  fill="light blue")
 ```
+
+### 4.1.4 Using the column (gangster_ind)
 
 ```{r}
 ggplot(data=pci_2021, 
@@ -148,7 +163,9 @@ ggplot(data=pci_2021,
                  fill="light blue")
 ```
 
-Boxplot
+## 4.2 Plotting of Boxplot
+
+### 4.2.1 Using the column (security_ind)
 
 ```{r}
 ggplot(data=pci_2021, 
@@ -157,12 +174,16 @@ ggplot(data=pci_2021,
                fill="light blue")
 ```
 
+### 4.2.2 Using the column (theft_ind)
+
 ```{r}
 ggplot(data=pci_2021, 
        aes(x=`theft_ind`)) +
   geom_boxplot(color="black", 
                fill="light blue")
 ```
+
+### 4.2.3 Using the column (police_ind)
 
 ```{r}
 ggplot(data=pci_2021, 
@@ -171,6 +192,8 @@ ggplot(data=pci_2021,
                fill="light blue")
 ```
 
+### 4.2.4 Using the column (gangster_ind)
+
 ```{r}
 ggplot(data=pci_2021, 
        aes(x=`gangster_ind`)) +
@@ -178,9 +201,9 @@ ggplot(data=pci_2021,
                fill="light blue")
 ```
 
-EDA using choropleth map
+## 4.3 EDA using choropleth map
 
-Joining the two datasets
+### 4.3.1 Joining the two datasets
 
 ```{r}
 combined_data <- left_join(vietnam, pci_2021, by=c("ADM1_EN"="Province"))
@@ -188,13 +211,13 @@ combined_data <- left_join(vietnam, pci_2021, by=c("ADM1_EN"="Province"))
 write_rds(combined_data, "data/rds/combined_data.rds")
 ```
 
-Preparing a choropleth map
+### 4.3.2 Preparing a choropleth map
 
 ```{r}
 qtm(combined_data, "security_ind")
 ```
 
-Correlation analysis
+### 4.4 Correlation analysis
 
 ```{r}
 cluster_vars.cor = cor(pci_2021[,4:7])
@@ -206,7 +229,7 @@ corrplot.mixed(cluster_vars.cor,
                tl.col = "black")
 ```
 
-Hierarchy Cluster Analysis
+### 4.5 Hierarchy Cluster Analysis
 
 ```{r}
 cluster_vars <- combined_data %>%
