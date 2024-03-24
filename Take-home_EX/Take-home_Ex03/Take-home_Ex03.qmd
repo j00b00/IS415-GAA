@@ -17,15 +17,31 @@ date: "`r Sys.Date()`"
 ```{r}
 pacman::p_load(sp, spdep, tmap, sf, ClustGeo, 
                ggpubr, cluster, factoextra, NbClust,
-               heatmaply, corrplot, psych, tidyverse, GGally)
+               heatmaply, corrplot, psych, tidyverse, GGally, knitr)
 ```
 
 # 2.0 Data
 
-## 2.1 Importing geospatial data
+## 2.1 Importing geospatial data into R environment
 
 ```{r}
 vietnam <- st_read(dsn = "data/geospatial", layer = "vnm_admbnda_adm1_gov_20201027") %>% select(c(0:3,5))
+```
+
+```{r}
+vietnam
+```
+
+```{r}
+glimpse(vietnam)
+```
+
+The vietnam data display the following columns. ADM1_EN refers to the English name of the province.
+
+Hence, rename the column to Province
+
+```{r}
+vietnam <- vietnam %>% rename("Province" = "ADM1_EN")
 ```
 
 ### 2.1.1 Plotting the geospatial data
@@ -36,22 +52,25 @@ plot(st_geometry(vietnam))
 
 ```{r}
 tmap_options(max.categories = 63)
-tm_shape(vietnam) + tm_polygons("ADM1_EN")
+tm_shape(vietnam) + tm_polygons("Province")
 ```
 
-## 2.2 Importing aspatial data
+```{r}
+```
+
+## 2.2 Importing aspatial data into R environemnt
 
 ```{r}
 pci_2021 <- read_csv("data/aspatial/pci_2021.csv")
 ```
 
 ```{r}
-pci_2021
+summary(pci_2021)
 ```
 
 # 3.0 Data Wrangling
 
-Rename the columns
+Rename the columms so that they are easier to work with
 
 ```{r}
 pci_2021 <- pci_2021 %>% 
@@ -62,27 +81,35 @@ pci_2021 <- pci_2021 %>%
          `gangster_ind` = `Pay money to gangsters groups (%)`)
 ```
 
+Before joining both data together, there is to check if the bot the geospatial and aspatial data have the same province
+
 Finding the unique Province in pci_2021 (aspatial data)
 
 ```{r}
 unique(pci_2021$Province)
 ```
 
+There a total of 63 provinces in the aspatial data
+
 Finding the unique Province in Vietnam (geospatial data)
 
 ```{r}
-unique(vietnam$ADM1_EN)
+unique(vietnam$Province)
 ```
+
+There is a total of 63 provinces in the geospatial data
 
 Finding the province that appear in pci_2021 but not in Vietnam
 
 ```{r}
 pci_2021 %>% 
-  filter(!Province %in% vietnam$ADM1_EN) %>% 
+  filter(!Province %in% vietnam$Province) %>% 
   select(Province)
 ```
 
-Rename the Province's name in pci_2021 with the name in Vietnam
+The above results show that there the naming of the Province in the aspatial data is different from the geospatial data.
+
+Hence, there is a need to remane the Province in the aspatial data to match the geospatial data
 
 ```{r}
 pci_2021 <- pci_2021 %>% 
@@ -99,11 +126,13 @@ pci_2021 <- pci_2021 %>%
 
 ```{r}
 pci_2021 %>% 
-  filter(!Province %in% vietnam$ADM1_EN) %>% 
+  filter(!Province %in% vietnam$Province) %>% 
   select(Province)
 ```
 
-Removing the percentage sign so that the data become numerical
+The results so 0 rows which means that the Province in the aspatial data now match the geospatial data
+
+Now, there is a need to remove the percentage sign from the aspatial data so that they can be converted to numerical data
 
 ```{r}
 pci_2021 <- pci_2021 %>% 
@@ -113,15 +142,26 @@ pci_2021 <- pci_2021 %>%
 ```{r}
 summary(pci_2021)
 ```
-Saving to rds
+
+Saving to pci_2021 to rds files
 
 ```{r}
 write_rds(pci_2021, "data/rds/pci_2021.rds")
 ```
 
+Reading the rds file
+
+```{r}
+pci_2021 <- read_rds("data/rds/pci_2021.rds")
+```
+
 # 4.0 Exploratory Data Analysis
 
+Plot the distribution of the variables (i.e Security_ind) by using appropriate Exploratory Data Analysis
+
 ## 4.1 Plotting of Histogram
+
+Histogram is useful to identify the overall distribution of the data values (i.e. left skew, right skew or normal distribution)
 
 ### 4.1.1 Using the column (security_ind)
 
@@ -165,6 +205,8 @@ ggplot(data=pci_2021,
 
 ## 4.2 Plotting of Boxplot
 
+Boxplot is useful to detect if there is any outliers
+
 ### 4.2.1 Using the column (security_ind)
 
 ```{r}
@@ -205,19 +247,33 @@ ggplot(data=pci_2021,
 
 ### 4.3.1 Joining the two datasets
 
+Before preparing the choropleth map, we need to combine both the geospatial data object and aspatial data.frame object into one.
+
 ```{r}
-combined_data <- left_join(vietnam, pci_2021, by=c("ADM1_EN"="Province"))
+combined_data <- left_join(vietnam, pci_2021, by=c("Province"="Province"))
   
 write_rds(combined_data, "data/rds/combined_data.rds")
 ```
 
+reading the combined_data rds file
+
+```{r}
+combined_data <- read_rds("data/rds/combined_data.rds")
+```
+
 ### 4.3.2 Preparing a choropleth map
+
+To have a quick look at the distribution of secuirty_ind on Provience level, a choropleth map will be prepared.
 
 ```{r}
 qtm(combined_data, "security_ind")
 ```
 
 ### 4.4 Correlation analysis
+
+Before performing cluster analysis, it is important to ensure that the cluster variables are not hugly correlated
+
+Viusalizing the correlation matrix
 
 ```{r}
 cluster_vars.cor = cor(pci_2021[,4:7])
@@ -229,17 +285,21 @@ corrplot.mixed(cluster_vars.cor,
                tl.col = "black")
 ```
 
+The correlation matrix shows that the variables are not highly correlated. Hence, it is safe to proceed with the cluster analysis.
+
 ### 4.5 Hierarchy Cluster Analysis
+
+extract the clustering variables from the combined_data simple feature object into data.frame.
 
 ```{r}
 cluster_vars <- combined_data %>%
   st_set_geometry(NULL) %>%
-  select("ADM1_EN","security_ind", "theft_ind", "police_ind", "gangster_ind")
+  select("Province","security_ind", "theft_ind", "police_ind", "gangster_ind")
 head(cluster_vars,10)
 ```
 
 ```{r}
-row.names(cluster_vars) <- cluster_vars$"ADM1_EN"
+row.names(cluster_vars) <- cluster_vars$"Province"
 head(cluster_vars,10)
 ```
 
@@ -248,21 +308,25 @@ combined_data <- select(cluster_vars, c(2:5))
 head(combined_data, 10)
 ```
 
-Data Standardization
+# 5.0 Data Standardization
 
-Min-Max standardisation
+In order to avoid the cluster analysis result is baised to clustering variables with large values, it is useful to standardise the input variables before performing cluster analysis.
+
+## 5.1 Min-Max standardisation
 
 ```{r}
 combined_data.std <- normalize(combined_data)
 summary(combined_data.std)
 ```
 
+## 5.2 Z-score standardisation
+
 ```{r}
 combined_data.z <- normalize(combined_data)
 summary(combined_data.z)
 ```
 
-visualizing standardized clustering variables
+## 5. 3 Visualizing standardized clustering variables
 
 ```{r}
 r <- ggplot(data=pci_2021, 
@@ -292,6 +356,8 @@ ggarrange(r, s, z,
           ncol = 3,
           nrow = 1)
 ```
+
+The above results show that there is no significant difference between the raw values and the standardised values.
 
 ```{r}
 r <- ggplot(data=pci_2021, 
@@ -323,15 +389,21 @@ ggarrange(r, s, z,
 
 ```
 
-computing proximity matrix
+## 6.0 computing proximity matrix
+
+Compute the proximity matrix using euclidean method.
 
 ```{r}
 proxmat <- dist(combined_data, method = 'euclidean')
 ```
 
+List the content of proxmat for visual insepction
+
 ```{r}
 proxmat
 ```
+
+# 7.0 Computing hierarchical clustering using Ward's method
 
 ```{r}
 hclust_ward <- hclust(proxmat, method = 'ward.D')
@@ -342,7 +414,7 @@ hclust_ward <- hclust(proxmat, method = 'ward.D')
 plot(hclust_ward, cex = 0.6)
 ```
 
-Selecting optimal clustering algorithm
+## 8.0 Selecting optimal clustering algorithm
 
 ```{r}
 m <- c( "average", "single", "complete", "ward")
@@ -355,21 +427,23 @@ ac <- function(x) {
 map_dbl(m, ac)
 ```
 
-Determining optial Clusters
+The above results so that the Ward method is the best method to use for the cluster analysis.
 
-Elbow method
+# 9.0 Determining optimal Clusters
+
+## 9.1 Elbow method
 
 ```{r}
 fviz_nbclust(combined_data, kmeans, method = "wss")
 ```
 
-Average silhouette method
+## 9.2 Average silhouette method
 
 ```{r}
 fviz_nbclust(combined_data, pam, method = "silhouette")
 ```
 
-Gap statistic method
+## 9.3 Gap statistic method
 
 ```{r}
 set.seed(12345)
@@ -386,7 +460,7 @@ print(gap_stat, method = "firstmax")
 fviz_gap_stat(gap_stat)
 ```
 
-Interpreting Dendogram
+# 10.0 Interpreting Dendogram
 
 ```{r}
 #| fig.height=10
@@ -396,15 +470,17 @@ rect.hclust(hclust_ward,
             border = 2:5)
 ```
 
-Visually-driven hierarchical clustering analysis
+# 11.0 Visually-driven hierarchical clustering analysis
 
-transforming the data to matrix
+Using heatmaply to build both hightly interactive cluster heatmap.
+
+## 11.1 Transforming the data to matrix
 
 ```{r}
 combined_data_mat <- data.matrix(combined_data)
 ```
 
-plotting interactive cluster heatmap using heatmaply()
+## 11.2 Plotting interactive cluster heatmap using heatmaply()
 
 ```{r}
 #| fig.height=10
@@ -424,7 +500,7 @@ heatmaply(normalize(combined_data_mat),
           )
 ```
 
-Mapping cluster formed
+# 12.0 Mapping cluster formed
 
 ```{r}
 groups <- as.factor(cutree(hclust_ward, k=3))
@@ -434,6 +510,81 @@ groups <- as.factor(cutree(hclust_ward, k=3))
 vietnam_cluster <- cbind(vietnam, as.matrix(groups)) %>% rename("CLUSTER" = "as.matrix.groups.")
 ```
 
+Use qtm() function to plot the cluster map
+
 ```{r}
 qtm(vietnam_cluster, "CLUSTER")
 ```
+
+# 13.0 Prototype
+
+The following images are prototypes that will be in our Shiny Application
+
+This is the overall view of the prototype
+
+```{r}
+#| echo: False
+knitr:: include_graphics("img/overall.png")
+```
+
+13.1 Exploratory Data Analysis
+
+The EDA consist of 4 different components
+
+```{r}
+#| echo: False
+knitr:: include_graphics("img/EDA_ss.png")
+```
+
+13.1.1 Histogram
+
+```{r}
+#| echo: False
+knitr:: include_graphics("img/histogram.png")
+```
+
+13.1.2 Boxplot
+
+```{r}
+#| echo: False
+knitr:: include_graphics("img/boxplot.png")
+```
+
+13.1.3 correlation matrix
+
+```{r}
+#| echo: False
+knitr:: include_graphics("img/correlation.png")
+```
+
+13.1.4 Choropleth map
+
+```{r}
+#| echo: False
+knitr:: include_graphics("img/EDA_choroplethMap.png")
+```
+
+Next, the Hierarchical Cluster Analysis consist of 2 components
+
+```{r}
+#| echo: False
+knitr:: include_graphics("img/Hierarchy_cluster_Analysis.png")
+```
+
+13.2.1 Dendogram
+
+```{r}
+#| echo: False
+knitr:: include_graphics("img/dendogram.png")
+```
+
+13.2.2 Cluster Choropleth Map
+
+```{r}
+#| echo: False
+knitr:: include_graphics("img/HCA_choroplethmap.png")
+
+```
+
+
+
