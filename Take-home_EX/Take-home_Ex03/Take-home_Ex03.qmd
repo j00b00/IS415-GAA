@@ -268,7 +268,6 @@ To have a quick look at the distribution of secuirty_ind on Provience level, a c
 ```{r}
 qtm(combined_data, "security_ind")
 ```
-
 ### 4.4 Correlation analysis
 
 Before performing cluster analysis, it is important to ensure that the cluster variables are not hugly correlated
@@ -585,6 +584,3 @@ knitr:: include_graphics("img/dendogram.png")
 knitr:: include_graphics("img/HCA_choroplethmap.png")
 
 ```
-
-
-
