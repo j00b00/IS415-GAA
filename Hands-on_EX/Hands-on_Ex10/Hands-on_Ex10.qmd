@@ -364,7 +364,7 @@ ggplot(data=hexagon_KD2SFCA,
 
 # 8.0 Modelling and Visualising Accessibility using spatial Accessiblity Measure (SAM) method
 
-## 8.1 Computing SAM accessibility 
+## 8.1 Computing SAM accessibility
 
 In this section, you are going to repeat most of the steps you had learned in previous section to perform the analysis. However, some of the codes will be combined into one code chunk. The code chunk below calculates Hansen’s accessibility using ac() of SpatialAcc and data.frame() is used to save the output in a data frame called acc_SAM. Notice that SAM is used for family argument.
 

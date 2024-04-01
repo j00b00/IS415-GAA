@@ -1,0 +1,13 @@
+---
+title: "Hands On Exercise 11 Calibrating Saptial Interaction Models With R"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+
+execute: 
+  eval: true
+  echo: true
+  warning: false
+date: "`r Sys.Date()`"
+---

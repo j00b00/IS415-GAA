@@ -55,8 +55,6 @@ tmap_options(max.categories = 63)
 tm_shape(vietnam) + tm_polygons("Province")
 ```
 
-```{r}
-```
 
 ## 2.2 Importing aspatial data into R environemnt
 
@@ -268,6 +266,7 @@ To have a quick look at the distribution of secuirty_ind on Provience level, a c
 ```{r}
 qtm(combined_data, "security_ind")
 ```
+
 ### 4.4 Correlation analysis
 
 Before performing cluster analysis, it is important to ensure that the cluster variables are not hugly correlated
@@ -305,6 +304,14 @@ head(cluster_vars,10)
 ```{r}
 combined_data <- select(cluster_vars, c(2:5))
 head(combined_data, 10)
+```
+
+```{r}
+write_rds(combined_data, "data/rds/combined_data_df.rds")
+```
+
+```{r}
+read_rds("data/rds/combined_data_df.rds")
 ```
 
 # 5.0 Data Standardization
